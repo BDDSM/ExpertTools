@@ -23,7 +23,7 @@
             <Border Grid.Column="0" BorderThickness="1" BorderBrush="Gray" Margin="5" Padding="5">
                 <StackPanel Orientation="Vertical">
                     <Label Content="Общее" FontWeight="Bold" FontSize="14" Foreground="#FF4800B0"></Label>
-                    <local:TextField Title="Период сбора данных (мин.)" Value="{Binding CollectPeriod}" MaxLength="3"></local:TextField>
+                    <local:TextField Title="Период сбора данных (мин.)" Value="{Binding CollectPeriod}" OnlyDigits="True" MaxLength="3"></local:TextField>
                     <local:DirectoryPicker Title="Каталог временных файлов:" Path="{Binding TempFolder}"></local:DirectoryPicker>
                     <CheckBox Content="Записывать лог работы" IsChecked="{Binding WriteLog}" Margin="0,10,0,5"></CheckBox>
                 </StackPanel>

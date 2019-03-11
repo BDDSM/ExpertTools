@@ -22,6 +22,7 @@ namespace ExpertTools.View
         public static readonly DependencyProperty TitleProperty;
         public static readonly DependencyProperty ValueProperty;
         public static readonly DependencyProperty MaxLengthProperty;
+        public static readonly DependencyProperty OnlyDigitsProperty;
 
         public string Title
         {
@@ -37,6 +38,11 @@ namespace ExpertTools.View
         {
             get { return (int)GetValue(MaxLengthProperty); }
             set { SetValue(MaxLengthProperty, value); }
+        }
+        public bool OnlyDigits
+        {
+            get { return (bool)GetValue(OnlyDigitsProperty); }
+            set { SetValue(OnlyDigitsProperty, value); }
         }
 
         static TextField()
@@ -66,11 +72,28 @@ namespace ExpertTools.View
                     BindsTwoWayByDefault = true,
                     DefaultUpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
                 });
+
+            OnlyDigitsProperty = DependencyProperty.Register("OnlyDigits",
+                typeof(bool),
+                typeof(TextField),
+                new FrameworkPropertyMetadata()
+                {
+                    BindsTwoWayByDefault = true,
+                    DefaultUpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+                });
         }
 
         public TextField()
         {
             InitializeComponent();
+        }
+
+        private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (OnlyDigits)
+            {
+                e.Handled = !Regex.IsMatch(e.Text, @"\d");
+            }
         }
     }
 }
