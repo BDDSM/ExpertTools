@@ -178,7 +178,10 @@ namespace ExpertTools.Helpers
             {
                 var property = type.GetProperty(setting.Key);
 
-                property.SetValue(obj, Convert.ChangeType(setting.Value, property.PropertyType));
+                if (property != null)
+                {
+                    property.SetValue(obj, Convert.ChangeType(setting.Value, property.PropertyType));
+                }
             }
         }
     }
