@@ -1,0 +1,22 @@
+﻿<Window x:Class="ExpertTools.View.SelectDatabaseDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ExpertTools.View"
+        mc:Ignorable="d"
+        Title="Выбор базы данных" Height="300" Width="400" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+        </Grid.RowDefinitions>
+        <DataGrid Grid.Row="0" Margin="5" AutoGenerateColumns="False" ItemsSource="{Binding Databases}" MouseDoubleClick="DataGrid_MouseDoubleClick" SelectedItem="{Binding SelectedItem}" CanUserReorderColumns="False" CanUserResizeColumns="False" CanUserSortColumns="False" SelectionMode="Single" CanUserResizeRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="База 1С" Width="*" Binding="{Binding Base1C}" IsReadOnly="True"></DataGridTextColumn>
+                <DataGridTextColumn Header="База SQL" Width="*" Binding="{Binding BaseSql}" IsReadOnly="True"></DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Button Grid.Row="1" Content="Выбрать" Width="120" Margin="5,0,5,5" Click="Button_Click" IsDefault="True"></Button>
+    </Grid>
+</Window>

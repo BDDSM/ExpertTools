@@ -208,5 +208,48 @@ namespace ExpertTools.Helpers
                 await writer.WriteLineAsync($"{DateTime.Now} : {text}, Memory={Environment.WorkingSet / 1000000}");
             }
         }
+
+        public static async Task<List<DatabaseItem>> GetBases()
+        {
+            var bases = new List<DatabaseItem>();
+
+            try
+            {
+                var confFolder = Config.Get<string>("TechLogConfFolder");
+
+                var rootDirectory = Directory.GetParent(confFolder);
+
+                var files = Directory.GetFiles(Path.Combine(rootDirectory.FullName, "srvinfo"), "1CV8Clst.lst", SearchOption.AllDirectories);
+
+                foreach (var file in files)
+                {
+                    using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (var reader = new StreamReader(stream))
+                    {
+                        try
+                        {
+                            while (!reader.EndOfStream)
+                            {
+                                var data = await reader.ReadLineAsync();
+
+                                if (data.Contains(",\"MSSQLServer\","))
+                                {
+                                    var lineData = data.Split(',');
+
+                                    var base1C = lineData[1].Trim(new char[] { '"' });
+                                    var baseSql = lineData[5].Trim(new char[] { '"' });
+
+                                    bases.Add(new DatabaseItem(base1C, baseSql));
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
+
+            return bases;
+        }
     }
 }

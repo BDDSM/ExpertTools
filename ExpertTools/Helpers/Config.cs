@@ -87,7 +87,14 @@ namespace ExpertTools.Helpers
                 throw new Exception($"Параметр {name} не существует");
             }
 
-            settings[name] = value.ToString();
+            if (value != null)
+            {
+                settings[name] = value.ToString();
+            }
+            else
+            {
+                settings[name] = "";
+            }
         }
 
         /// <summary>

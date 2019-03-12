@@ -101,11 +101,17 @@
     <Compile Include="Helpers\Config.cs" />
     <Compile Include="Helpers\SQL.cs" />
     <Compile Include="Helpers\TL.cs" />
+    <Compile Include="Model\DatabaseItem.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
+    <Compile Include="ViewModel\SelectDatabaseDialogViewModel.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
     <Page Include="View\MainView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="View\SelectDatabaseDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="View\TextField.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -121,6 +127,9 @@
     </Compile>
     <Compile Include="View\MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\SelectDatabaseDialog.xaml.cs">
+      <DependentUpon>SelectDatabaseDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\TextField.xaml.cs">
       <DependentUpon>TextField.xaml</DependentUpon>

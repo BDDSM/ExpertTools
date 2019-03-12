@@ -51,6 +51,7 @@
                 <StackPanel Orientation="Vertical">
                     <Label Content="Фильтр" FontWeight="Bold" FontSize="14" Foreground="#FF4800B0"></Label>
                     <CheckBox Content="По базе" IsChecked="{Binding FilterByDatabase}" Margin="0,10,0,5"></CheckBox>
+                    <Button Content="Заполнить" Width="80" HorizontalAlignment="Left" Margin="1,5,0,5" IsEnabled="{Binding FilterByDatabase}" Command="{Binding SelectDatabaseCmd}"/>
                     <local:TextField Title="База 1С" Value="{Binding Database1CEnterprise}" IsEnabled="{Binding FilterByDatabase}"></local:TextField>
                     <local:TextField Title="База СУБД" Value="{Binding DatabaseSql}" IsEnabled="{Binding FilterByDatabase}"></local:TextField>
                 </StackPanel>

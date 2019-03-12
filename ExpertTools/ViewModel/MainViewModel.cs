@@ -11,6 +11,7 @@ using ExpertTools.Helpers;
 using System.Data.SqlClient;
 using System.Windows.Threading;
 using System.Xml.Linq;
+using ExpertTools.View;
 
 namespace ExpertTools.ViewModel
 {
@@ -267,6 +268,7 @@ namespace ExpertTools.ViewModel
         public RelayCommand StartCmd { get; set; }
         public RelayCommand LoadSettingsCmd { get; set; }
         public RelayCommand SaveSettingsCmd { get; set; }
+        public RelayCommand SelectDatabaseCmd { get; set; }
 
         #endregion
 
@@ -275,8 +277,9 @@ namespace ExpertTools.ViewModel
             StartCmd = new RelayCommand(Start);
             SaveSettingsCmd = new RelayCommand(SaveSettings);
             LoadSettingsCmd = new RelayCommand(LoadSettings);
+            SelectDatabaseCmd = new RelayCommand(SelectDatabase);
 
-            //SetTestData();
+            SetTestData();
         }
 
         private async void Start()
@@ -460,6 +463,19 @@ namespace ExpertTools.ViewModel
                 {
                     MessageBox.Show(ex.Message);
                 }
+            }
+        }
+
+        private void SelectDatabase()
+        {
+            var dialog = new SelectDatabaseDialog();
+
+            var result = dialog.ShowDialog();
+
+            if (result != null && (bool)result)
+            {
+                Database1CEnterprise = dialog.SelectedItem?.Base1C;
+                DatabaseSql = dialog.SelectedItem?.BaseSql;
             }
         }
     }
