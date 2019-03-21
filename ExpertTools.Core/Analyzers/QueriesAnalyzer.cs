@@ -87,11 +87,11 @@ namespace ExpertTools.Core
             //await StartCollectTlData();
             //await Task.Delay(_collectPeriod * 60 * 1000);
             //StopCollectTlData();
-            await HandleTlData();
+            await ProcessTlData();
         }
 
         /// <summary>
-        /// Starts collect data of the technology log
+        /// Starts a collecting data of the technology log
         /// </summary>
         /// <returns></returns>
         private async Task StartCollectTlData()
@@ -101,7 +101,7 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Stops collect data of the technology log
+        /// Stops a collecting data of the technology log
         /// </summary>
         private void StopCollectTlData()
         {
@@ -109,10 +109,10 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Starts handling technology log data
+        /// Starts a processing data of the lechnology log
         /// </summary>
         /// <returns></returns>
-        public async Task HandleTlData()
+        public async Task ProcessTlData()
         {
             // Paths to the output files
             var contextFilePath = Path.Combine(_tempFolder, CONTEXT_TEMP_FILENAME);
@@ -131,10 +131,10 @@ namespace ExpertTools.Core
                 var dbmssqlOutputBlock = new ActionBlock<string>(async (text) => await Common.WriteToOutputStream(text, dbmssqlWriter));
 
                 // Blocks of the processing data
-                var contextBlock = new ActionBlock<string>((text) => HandleContextEvent(text, contextOutputBlock), parallelBlockOptions);
+                var contextBlock = new ActionBlock<string>((text) => ProcessContextEvent(text, contextOutputBlock), parallelBlockOptions);
                 events.Add(("Context", contextBlock));
 
-                var dbmssqlBlock = new ActionBlock<string>((text) => HandleDbmssqlEvent(text, dbmssqlOutputBlock), parallelBlockOptions);
+                var dbmssqlBlock = new ActionBlock<string>((text) => ProcessDbmssqlEvent(text, dbmssqlOutputBlock), parallelBlockOptions);
                 events.Add(("DBMSSQL", dbmssqlBlock));
 
                 // Reading tech log block
@@ -167,7 +167,7 @@ namespace ExpertTools.Core
         /// <param name="text">Event data</param>
         /// <param name="targetBlock">Next block</param>
         /// <returns></returns>
-        private async Task HandleDbmssqlEvent(string text, ITargetBlock<string> targetBlock)
+        private async Task ProcessDbmssqlEvent(string text, ITargetBlock<string> targetBlock)
         {
             var sql = await TLHelper.GetPropertyValue(text, Logcfg.SQL_PR);
 
@@ -222,7 +222,7 @@ namespace ExpertTools.Core
         /// <param name="text">Event data</param>
         /// <param name="targetBlock">Next block</param>
         /// <returns></returns>
-        private async Task HandleContextEvent(string text, ITargetBlock<string> targetBlock)
+        private async Task ProcessContextEvent(string text, ITargetBlock<string> targetBlock)
         {
             var clientId = await TLHelper.GetPropertyValue(text, Logcfg.CLIENT_ID_PR);
 
