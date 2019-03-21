@@ -2,19 +2,35 @@
 
 --Таблицы базы данных
 
-CREATE TABLE Tldbmssql
+CREATE TABLE QueriesAnalyzeTlQueries
 (
 	id INT IDENTITY NOT NULL,
+	_Period datetime2 not null,
+	_user NVARCHAR(200) NOT NULL,
+	connectId NVARCHAR(20) NOT NULL,
+	clientId NVARCHAR(20) NOT NULL,
 	sql NVARCHAR(MAX) NOT NULL,
 	normalized_sql NVARCHAR(MAX) NOT NULL,
-	_user NVARCHAR(200) NOT NULL,
-	context_first_line NVARCHAR(MAX) NOT NULL,
-	context_last_line NVARCHAR(MAX) NOT NULL,
+	context_first_line NVARCHAR(400) NOT NULL,
+	context_last_line NVARCHAR(400) NOT NULL,
+	context_exists BIT NOT NULL,
 	_hash NVARCHAR(32) NOT NULL,
-	CONSTRAINT PK_Tldbmssql PRIMARY KEY(id)
+	CONSTRAINT PK_QueriesAnalyzeTlQueries PRIMARY KEY(id)
 );
 
-CREATE TABLE Sqlqueries
+CREATE TABLE QueriesAnalyzeTlContexts
+(
+	id INT IDENTITY NOT NULL,
+	_Period DATETIME2 NOT NULL,
+	_user NVARCHAR(200) NOT NULL,
+	connectId NVARCHAR(20) NOT NULL,
+	clientId NVARCHAR(20) NOT NULL,
+	context_first_line NVARCHAR(400) NOT NULL,
+	context_last_line NVARCHAR(400) NOT NULL,
+	CONSTRAINT PK_QueriesAnalyzeTlContexts PRIMARY KEY(id)
+);
+
+CREATE TABLE QueriesAnalyzeSqlQueries
 (
 	id INT IDENTITY(1,1) NOT NULL,
 	sql NVARCHAR(MAX) NOT NULL,
@@ -25,13 +41,41 @@ CREATE TABLE Sqlqueries
 	writes BIGINT NOT NULL,
 	cpu_time BIGINT NOT NULL,
 	_hash NVARCHAR(32) NOT NULL,
-	CONSTRAINT PK_Sqlqueries PRIMARY KEY(id)
+	CONSTRAINT PK_QueriesAnalyzeSqlQueries PRIMARY KEY(id)
+);
+
+CREATE TABLE QueriesAnalyzeAvgSqlQueries
+(
+	id INT IDENTITY(1,1) NOT NULL,
+	duration BIGINT NOT NULL,
+	physical_reads BIGINT NOT NULL,
+	logical_reads BIGINT NOT NULL,
+	writes BIGINT NOT NULL,
+	cpu_time BIGINT NOT NULL,
+	_hash NVARCHAR(32) NOT NULL,
+	CONSTRAINT PK_QueriesAnalyzeAvgSqlQueries PRIMARY KEY(id)
 );
 
 --Индексы таблиц базы данных
 CREATE NONCLUSTERED INDEX by_hash 
-	ON Tldbmssql(_hash) 
-		INCLUDE(context_last_line, context_first_line);
+	ON QueriesAnalyzeTlQueries(_hash) 
+		INCLUDE(context_last_line, context_first_line, sql);
+
+CREATE NONCLUSTERED INDEX by_connectId_clientId_context_exists 
+	ON QueriesAnalyzeTlQueries(connectId, clientId, context_exists) 
+		INCLUDE(id, _Period);
+
+CREATE NONCLUSTERED INDEX by_connectId_clientId_period 
+	ON QueriesAnalyzeTlQueries(_Period, connectId, clientId);
+
+CREATE NONCLUSTERED INDEX by_connectId_clientId_period 
+	ON QueriesAnalyzeTlContexts(_Period, connectId, clientId) 
+		INCLUDE(context_first_line, context_last_line);
 
 CREATE NONCLUSTERED INDEX by_hash 
-	ON Sqlqueries(_hash);
+	ON QueriesAnalyzeSqlQueries(_hash)
+		INCLUDE(sql, normalized_sql, duration, physical_reads, logical_reads, writes, cpu_time);
+
+CREATE NONCLUSTERED INDEX by_hash 
+	ON QueriesAnalyzeAvgSqlQueries(_hash)
+		INCLUDE(duration, physical_reads, logical_reads, writes, cpu_time);

@@ -79,11 +79,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => ApplicationDatabase);
+                return Config.ApplicationDatabase;
             }
             set
             {
-                Config.Set(() => ApplicationDatabase, value);
+                Config.ApplicationDatabase = value;
                 RaisePropertyChanged(() => ApplicationDatabase);
             }
         }
@@ -92,11 +92,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => TechLogConfFolder);
+                return Config.TechLogConfFolder;
             }
             set
             {
-                Config.Set(() => TechLogConfFolder, value);
+                Config.TechLogConfFolder = value;
                 RaisePropertyChanged(() => TechLogConfFolder);
             }
         }
@@ -105,11 +105,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => TechLogFolder);
+                return Config.TechLogFolder;
             }
             set
             {
-                Config.Set(() => TechLogFolder, value);
+                Config.TechLogFolder = value;
                 RaisePropertyChanged(() => TechLogFolder);
             }
         }
@@ -118,11 +118,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => WriteLog);
+                return Config.WriteLog;
             }
             set
             {
-                Config.Set(() => WriteLog, value);
+                Config.WriteLog = value;
                 RaisePropertyChanged(() => WriteLog);
             }
         }
@@ -131,11 +131,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => SqlServer);
+                return Config.SqlServer;
             }
             set
             {
-                Config.Set(() => SqlServer, value);
+                Config.SqlServer = value;
                 RaisePropertyChanged(() => SqlServer);
             }
         }
@@ -144,11 +144,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => WindowsAuthentication);
+                return Config.WindowsAuthentication;
             }
             set
             {
-                Config.Set(() => WindowsAuthentication, value);
+                Config.WindowsAuthentication = value;
                 RaisePropertyChanged(() => WindowsAuthentication);
                 SqlUser = "";
                 SqlPassword = "";
@@ -159,11 +159,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => SqlUser);
+                return Config.SqlUser;
             }
             set
             {
-                Config.Set(() => SqlUser, value);
+                Config.SqlUser = value;
                 RaisePropertyChanged(() => SqlUser);
             }
         }
@@ -172,11 +172,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => SqlPassword);
+                return Config.SqlPassword;
             }
             set
             {
-                Config.Set(() => SqlPassword, value);
+                Config.SqlPassword = value;
                 RaisePropertyChanged(() => SqlPassword);
             }
         }
@@ -185,24 +185,24 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => SqlTraceFolder);
+                return Config.SqlTraceFolder;
             }
             set
             {
-                Config.Set(() => SqlTraceFolder, value);
+                Config.SqlTraceFolder = value;
                 RaisePropertyChanged(() => SqlTraceFolder);
             }
         }
 
-        public string CollectPeriod
+        public int CollectPeriod
         {
             get
             {
-                return Config.Get(() => CollectPeriod);
+                return Config.CollectPeriod;
             }
             set
             {
-                Config.Set(() => CollectPeriod, value);
+                Config.CollectPeriod = value;
                 RaisePropertyChanged(() => CollectPeriod);
             }
         }
@@ -211,11 +211,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => TempFolder);
+                return Config.TempFolder;
             }
             set
             {
-                Config.Set(() => TempFolder, value);
+                Config.TempFolder = value;
                 RaisePropertyChanged(() => TempFolder);
             }
         }
@@ -224,11 +224,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => FilterByDatabase);
+                return Config.FilterByDatabase;
             }
             set
             {
-                Config.Set(() => FilterByDatabase, value);
+                Config.FilterByDatabase = value;
                 RaisePropertyChanged(() => FilterByDatabase);
                 Database1CEnterprise = "";
                 DatabaseSql = "";
@@ -239,11 +239,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => Database1CEnterprise);
+                return Config.Database1CEnterprise;
             }
             set
             {
-                Config.Set(() => Database1CEnterprise, value);
+                Config.Database1CEnterprise = value;
                 RaisePropertyChanged(() => Database1CEnterprise);
             }
         }
@@ -252,11 +252,11 @@ namespace ExpertTools.ViewModel
         {
             get
             {
-                return Config.Get(() => DatabaseSql);
+                return Config.DatabaseSql;
             }
             set
             {
-                Config.Set(() => DatabaseSql, value);
+                Config.DatabaseSql = value;
                 RaisePropertyChanged(() => DatabaseSql);
             }
         }
@@ -274,12 +274,41 @@ namespace ExpertTools.ViewModel
 
         public MainViewModel()
         {
-            StartCmd = new RelayCommand(Start);
+            StartCmd = new RelayCommand(StartNew);
             SaveSettingsCmd = new RelayCommand(SaveSettings);
             LoadSettingsCmd = new RelayCommand(LoadSettings);
             SelectDatabaseCmd = new RelayCommand(SelectDatabase);
+        }
 
-            SetTestData();
+        private async void StartNew()
+        {
+            StartTimer();
+
+            Enabled = true;
+
+            await UpdateState("Выполняется");
+
+            try
+            {
+                var analyzer = new Core.QueriesAnalyzer(TechLogConfFolder, TechLogFolder, SqlTraceFolder, TempFolder, CollectPeriod);
+
+                if (FilterByDatabase)
+                {
+                    analyzer.SetDatabaseFilter(Database1CEnterprise);
+                }
+
+                await analyzer.Run();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
+            await UpdateState("Завершено");
+
+            Enabled = false;
+
+            StopTimer();
         }
 
         private async void Start()
@@ -290,91 +319,80 @@ namespace ExpertTools.ViewModel
 
             try
             {
-                await UpdateState("Подготовка");
-
-                if (!Config.Check())
+                if (!await CheckBeforeStart())
                 {
-                    throw new Exception("Не заполнены обязательные для заполнения поля");
+                    return;
                 }
 
-                using (var connection = SQL.GetSqlConnection())
-                {
-                    await connection.OpenAsync();
+                object analyzer = new QueriesAnalyze();
 
-                    await SQL.CreateDatabaseIfNotExists(connection);
+                if (analyzer is ITlAnalyzer tc)
+                {
+                    await UpdateState("Запуск технологического журнала");
+
+                    await tc.StartCollectTlData();
                 }
 
-                if (!Common.CheckFolders())
+                if (analyzer is ISqlAnalyzer sc)
                 {
-                    var result = MessageBox.Show("Для продолжения работы каталоги логов и временных файлов необходимо очистить, продолжить?", State, MessageBoxButtons.YesNo);
+                    await UpdateState("Запуск сессии XE");
 
-                    if (result == DialogResult.Yes)
-                    {
-                        await UpdateState("Очистка каталогов");
-
-                        Common.ClearFolders();
-                    }
-                    else
-                    {
-                        await UpdateState("Отменено");
-                        Enabled = false;
-                        StopTimer();
-                    }
+                    await sc.StartCollectSqlData();
                 }
-
-                await UpdateState("Запуск сбора данных");
-
-                TL.StartCollectTechLog();
-
-                await UpdateState("Ожидание начала сбора данных");
-
-                await TL.WaitStartCollectData();
-
-                await SQL.StartCollectSqlTrace();
 
                 await UpdateState("Сбор данных");
 
-                // Ждем сбора данных
-                await Task.Delay(Config.Get<int>("CollectPeriod") * 60 * 1000);
+                await Task.Delay(Config.CollectPeriod * 60 * 1000);
 
-                await UpdateState("Остановка сбора данных");
-
-                TL.StopCollectTechLog();
-                await SQL.StopCollectSqlTrace();
-
-                await UpdateState("Обработка данных технологического журнала");
-
-                await TL.ProcessTechLog();
-
-                await UpdateState("Обработка данных Extended Events");
-
-                GC.Collect();
-
-                await SQL.ProcessSqlTrace();
-
-                await UpdateState("Загрузка результатов обработки в базу данных");
-
-                GC.Collect();
-
-                await SQL.LoadTechLogIntoDatabase();
-                await SQL.LoadSqlTraceIntoDatabase();
-
-                if (Config.Get<bool>("ClearFoldersAfter"))
+                if (analyzer is ITlAnalyzer tcs)
                 {
-                    await UpdateState("Очистка каталогов");
+                    await UpdateState("Остановка технологического журнала");
 
-                    Common.ClearFolders();
+                    tcs.StopCollectTlData();
+                }
+
+                if (analyzer is ISqlAnalyzer scs)
+                {
+                    await UpdateState("Остановка сессии XE");
+
+                    await scs.StopCollectSqlData();
+                }
+
+                if (analyzer is ITlAnalyzer th)
+                {
+                    await UpdateState("Обработка технологического журнала");
+
+                    await th.HandleTlData();
+                }
+
+                if (analyzer is ISqlAnalyzer sh)
+                {
+                    await UpdateState("Обработка сессии XE");
+
+                    await sh.HandleSqlData();
+                }
+
+                if (analyzer is ITlAnalyzer tl)
+                {
+                    await UpdateState("Загрузка обработанных данных технологического журнала");
+
+                    await tl.LoadTlDataIntoDatabase();
+                }
+
+                if (analyzer is ISqlAnalyzer sl)
+                {
+                    await UpdateState("Загрузка обработанных данных сессии XE");
+
+                    await sl.LoadSqlDataIntoDatabase();
                 }
 
                 await UpdateState("Выполнено");
-
-                GC.Collect();
             }
             catch (Exception ex)
             {
                 await UpdateState("Ошибка");
 
-                MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.Message, "Ошибка");
             }
 
             StopTimer();
@@ -390,18 +408,10 @@ namespace ExpertTools.ViewModel
         {
             State = state;
 
-            if (Config.Get<bool>("WriteLog") && writeLog)
+            if (Config.WriteLog && writeLog)
             {
                 await Common.WriteLog(State);
             }
-        }
-
-        private void SetTestData()
-        {
-            TechLogFolder = @"C:\TechLogTrace";
-            TechLogConfFolder = @"C:\Program Files\1cv8\conf";
-            TempFolder = @"C:\Users\akpaev.e.ENTERPRISE\Desktop\Temp";
-            SqlTraceFolder = @"C:\MSSQLTrace";
         }
 
         private void StartTimer()
@@ -457,7 +467,7 @@ namespace ExpertTools.ViewModel
                 {
                     await Config.LoadConfig(dialog.FileName);
 
-                    Config.SetPropertiesValue(this);
+                    RaisePropertyChanged("");
                 }
                 catch (Exception ex)
                 {
@@ -477,6 +487,36 @@ namespace ExpertTools.ViewModel
                 Database1CEnterprise = dialog.SelectedItem?.Base1C;
                 DatabaseSql = dialog.SelectedItem?.BaseSql;
             }
+        }
+
+        private async Task<bool> CheckBeforeStart()
+        {
+            await UpdateState("Подготовка");
+
+            Config.CheckSettings();
+
+            await SQL.CreateDatabaseIfNotExists();
+
+            if (!Config.CheckFolders())
+            {
+                var result = MessageBox.Show("Для продолжения работы каталоги логов и временных файлов необходимо очистить, продолжить?", State, MessageBoxButtons.YesNo);
+
+                if (result == DialogResult.Yes)
+                {
+                    await UpdateState("Очистка каталогов");
+
+                    Common.ClearFolders();
+                }
+                else
+                {
+                    await UpdateState("Отменено");
+                    Enabled = false;
+                    StopTimer();
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

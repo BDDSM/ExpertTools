@@ -4,6 +4,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.28621.142
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpertTools", "ExpertTools.csproj", "{19C0CAB4-333D-4FCD-BDF4-DB07CBADC697}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BBCD8F42-3F06-454F-A264-7E3A1EA7887C} = {BBCD8F42-3F06-454F-A264-7E3A1EA7887C}
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExpertTools.Core", "..\ExpertTools.Core\ExpertTools.Core.csproj", "{BBCD8F42-3F06-454F-A264-7E3A1EA7887C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +20,10 @@ Global
 		{19C0CAB4-333D-4FCD-BDF4-DB07CBADC697}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19C0CAB4-333D-4FCD-BDF4-DB07CBADC697}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19C0CAB4-333D-4FCD-BDF4-DB07CBADC697}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBCD8F42-3F06-454F-A264-7E3A1EA7887C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBCD8F42-3F06-454F-A264-7E3A1EA7887C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBCD8F42-3F06-454F-A264-7E3A1EA7887C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBCD8F42-3F06-454F-A264-7E3A1EA7887C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

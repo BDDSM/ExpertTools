@@ -32,7 +32,7 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -40,9 +40,10 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -52,6 +53,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <NoWin32Manifest>true</NoWin32Manifest>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>185096_Svm_icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CommonServiceLocator, Version=2.0.4.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
@@ -65,6 +69,14 @@
     </Reference>
     <Reference Include="GalaSoft.MvvmLight.Platform, Version=5.4.1.0, Culture=neutral, PublicKeyToken=5f873c45e98af8a1, processorArchitecture=MSIL">
       <HintPath>..\packages\MvvmLightLibs.5.4.1.1\lib\net45\GalaSoft.MvvmLight.Platform.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.SqlServer.XE.Core, Version=14.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files\Microsoft SQL Server\140\Shared\Microsoft.SqlServer.XE.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.SqlServer.XEvent.Linq, Version=14.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files\Microsoft SQL Server\140\Shared\Microsoft.SqlServer.XEvent.Linq.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -99,9 +111,14 @@
     <Compile Include="Converter\InverseBoolConverter.cs" />
     <Compile Include="Helpers\Common.cs" />
     <Compile Include="Helpers\Config.cs" />
+    <Compile Include="Helpers\QueriesAnalyze.cs" />
     <Compile Include="Helpers\SQL.cs" />
     <Compile Include="Helpers\TL.cs" />
+    <Compile Include="ISqlAnalyzer.cs" />
+    <Compile Include="ITlAnalyzer.cs" />
+    <Compile Include="Model\AnalyzeType.cs" />
     <Compile Include="Model\DatabaseItem.cs" />
+    <Compile Include="Model\EventDescription.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\SelectDatabaseDialogViewModel.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
@@ -179,19 +196,26 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="185096_Svm_icon.ico" />
     <Content Include="Resources\bulk_insert.sql" />
     <Content Include="Resources\database_exists.sql" />
-    <Content Include="Resources\kill_connections.sql" />
-    <Content Include="Resources\drop_database.sql" />
     <Content Include="Resources\create_database_structure.sql" />
-    <Content Include="Resources\get_session_events.sql" />
-    <Content Include="Resources\stop_session.sql" />
-    <Content Include="Resources\start_session.sql" />
-    <Content Include="Resources\delete_session.sql" />
-    <Content Include="Resources\create_session_for_join_filter.sql" />
-    <Content Include="Resources\create_session_for_join.sql" />
+    <Content Include="Resources\XE\get_session_events.sql" />
+    <Content Include="Resources\XE\group_queries_avg.sql" />
+    <Content Include="Resources\XE\stop_session.sql" />
+    <Content Include="Resources\XE\start_session.sql" />
+    <Content Include="Resources\XE\delete_session.sql" />
+    <Content Include="Resources\XE\XeQueriesAnalyzeDbFilter.sql" />
+    <Content Include="Resources\XE\XeQueriesAnalyze.sql" />
     <Content Include="Resources\create_database.sql" />
+    <Resource Include="Resources\TL\TlQueriesAnalyzeDbFilter.xml" />
+    <Resource Include="Resources\TL\TlQueriesAnalyze.xml" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\ExpertTools.Core\ExpertTools.Core.csproj">
+      <Project>{bbcd8f42-3f06-454f-a264-7e3a1ea7887c}</Project>
+      <Name>ExpertTools.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

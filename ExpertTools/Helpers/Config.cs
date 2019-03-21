@@ -6,30 +6,43 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.IO;
 using System.Linq.Expressions;
+using System.Reflection;
+using ExpertTools.Model;
 
 namespace ExpertTools.Helpers
 {
     public static class Config
     {
-        private static readonly Dictionary<string, string> settings = new Dictionary<string, string>();
+        // Настройки технологического журнала
+        public static string TechLogConfFolder { get; set; } = "";
+        public static string TechLogFolder { get; set; } = "";
+        public static string Database1CEnterprise { get; set; } = "";
+        // Настройки СУБД
+        public static string SqlServer { get; set; } = "";
+        public static bool WindowsAuthentication { get; set; } = false;
+        public static string SqlUser { get; set; } = "";
+        public static string SqlPassword { get; set; } = "";
+        public static string SqlTraceFolder { get; set; } = "";
+        public static string DatabaseSql { get; set; } = "";
+        // Общие настройки
+        public static AnalyzeType AnalyzeType { get; set; } = 0;
+        public static int CollectPeriod { get; set; } = 0;
+        public static string TempFolder { get; set; } = "";
+        public static bool FilterByDatabase { get; set; } = false;
+        public static string ApplicationDatabase { get; set; } = "";
+        public static bool ClearFoldersAfter { get; set; } = false;
+        public static bool WriteLog { get; set; } = false;
 
         static Config()
         {
-            settings["ApplicationDatabase"] = "ExpertTools";
-            settings["TechLogConfFolder"] = "";
-            settings["TechLogFolder"] = "";
-            settings["SqlServer"] = "localhost";
-            settings["WindowsAuthentication"] = "true";
-            settings["SqlUser"] = "";
-            settings["SqlPassword"] = "";
-            settings["SqlTraceFolder"] = "";
-            settings["CollectPeriod"] = "20";
-            settings["TempFolder"] = "";
-            settings["FilterByDatabase"] = "False";
-            settings["Database1CEnterprise"] = "";
-            settings["DatabaseSql"] = "";
-            settings["ClearFoldersAfter"] = "False";
-            settings["WriteLog"] = "True";
+            AnalyzeType = AnalyzeType.QueriesAnalyze;
+            ApplicationDatabase = "ExpertTools";
+            SqlServer = "localhost";
+            WindowsAuthentication = true;
+            CollectPeriod = 20;
+            FilterByDatabase = false;
+            ClearFoldersAfter = false;
+            WriteLog = true;
         }
 
         /// <summary>
@@ -41,11 +54,37 @@ namespace ExpertTools.Helpers
         {
             using (var stream = new StreamWriter(path))
             {
-                foreach(var kv in settings)
-                {
-                    await stream.WriteLineAsync($"{kv.Key} = {kv.Value}");
-                }
+                await SaveConfigElement(stream, () => ApplicationDatabase);
+                await SaveConfigElement(stream, () => TechLogConfFolder);
+                await SaveConfigElement(stream, () => TechLogFolder);
+                await SaveConfigElement(stream, () => SqlServer);
+                await SaveConfigElement(stream, () => WindowsAuthentication);
+                await SaveConfigElement(stream, () => SqlUser);
+                await SaveConfigElement(stream, () => SqlPassword);
+                await SaveConfigElement(stream, () => SqlTraceFolder);
+                await SaveConfigElement(stream, () => CollectPeriod);
+                await SaveConfigElement(stream, () => TempFolder);
+                await SaveConfigElement(stream, () => FilterByDatabase);
+                await SaveConfigElement(stream, () => Database1CEnterprise);
+                await SaveConfigElement(stream, () => DatabaseSql);
+                await SaveConfigElement(stream, () => ClearFoldersAfter);
+                await SaveConfigElement(stream, () => WriteLog);
             }
+        }
+
+        private static async Task SaveConfigElement<T>(StreamWriter writer, Expression<Func<T>> property, string comment = "")
+        {
+            var me = property.Body as MemberExpression;
+
+            var name = me.Member.Name;
+            var value = ((PropertyInfo)me.Member).GetValue(property).ToString();
+
+            if (comment != "")
+            {
+                await writer.WriteLineAsync($"// {comment}");
+            }
+
+            await writer.WriteLineAsync($"{name} = {value}");
         }
 
         /// <summary>
@@ -55,6 +94,8 @@ namespace ExpertTools.Helpers
         /// <returns></returns>
         public static async Task LoadConfig(string path)
         {
+            var thisType = typeof(Config);
+
             using (var stream = new StreamReader(path))
             {
                 while(!stream.EndOfStream)
@@ -70,125 +111,147 @@ namespace ExpertTools.Helpers
                         throw new Exception("Ошибка чтения файла конфигурации");
                     }
 
-                    settings[pair[0].Trim()] = pair[1].Trim();
+                    var name = pair[0].Trim();
+                    var value = pair[1].Trim();
+
+                    var property = thisType.GetProperty(name);
+
+                    if (property != null)
+                    {
+                        property.SetValue(name, Convert.ChangeType(value, property.PropertyType));
+                    }
                 }
             }
-        }
-
-        /// <summary>
-        /// Устанавливает значение настройки
-        /// </summary>
-        /// <param name="name">Имя настройки</param>
-        /// <param name="value">Значение настройки</param>
-        public static void Set(string name, object value)
-        {
-            if (!settings.ContainsKey(name))
-            {
-                throw new Exception($"Параметр {name} не существует");
-            }
-
-            if (value != null)
-            {
-                settings[name] = value.ToString();
-            }
-            else
-            {
-                settings[name] = "";
-            }
-        }
-
-        /// <summary>
-        /// Устанавливает значение настройки с именем переданного свойства
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="setting"></param>
-        /// <param name="value"></param>
-        public static void Set<T>(Expression<Func<T>> setting, object value)
-        {
-            var me = setting.Body as MemberExpression;
-
-            Set(me.Member.Name, value);
-        }
-
-        /// <summary>
-        /// Возвращает значение настройки
-        /// </summary>
-        /// <param name="name">Имя настройки</param>
-        /// <param name="throwExceptionIfNotSetted">Если установлено true, то при незаданной настройке будет вызвано исключение</param>
-        /// <returns>Значение настройки</returns>
-        public static T Get<T>(string name)
-        {
-            if (!settings.ContainsKey(name))
-            {
-                throw new Exception($"Параметр {name} не существует");
-            }
-
-            T value = settings[name] == "" ? default(T) : (T)Convert.ChangeType(settings[name], typeof(T));
-
-            return value;
-        }
-
-        /// <summary>
-        /// Возвращает значение настройки с именем переданного свойства
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="setting"></param>
-        /// <returns></returns>
-        public static T Get<T>(Expression<Func<T>> setting)
-        {
-            var me = setting.Body as MemberExpression;
-
-            return Get<T>(me.Member.Name);
         }
 
         /// <summary>
         /// Проверяет настройки на корректность заполнения
         /// </summary>
         /// <returns></returns>
-        public static bool Check()
+        public static void CheckSettings()
         {
-            if (Get<string>("ApplicationDatabase") == "") return false;
-            if (Get<string>("TechLogConfFolder") == "") return false;
-            if (Get<string>("TechLogFolder") == "") return false;
-            if (Get<string>("SqlServer") == "") return false;
+            CheckFieldFilling(AnalyzeType.ToString(), "Тип анализа");
+            CheckFieldFilling(ApplicationDatabase, "База данных приложения");
+            CheckFieldFilling(TechLogConfFolder, "Каталог настроек технологического журнала");
+            CheckFieldFilling(TechLogFolder, "Каталог логов технологического журнала");
+            CheckFieldFilling(SqlServer, "Адрес СУБД");
 
-            if (!Get<bool>("WindowsAuthentication"))
+            if (!WindowsAuthentication)
             {
-                if (Get<string>("SqlUser") == "") return false;
-                if (Get<string>("SqlPassword") == "") return false;
+                CheckFieldFilling(SqlUser, "Пользователь СУБД");
+                CheckFieldFilling(SqlPassword, "Пароль пользователя СУБД");
             }
 
-            if (Get<string>("SqlTraceFolder") == "") return false;
-            if (Get<string>("CollectPeriod") == "") return false;
-            if (Get<string>("TempFolder") == "") return false;
+            CheckFieldFilling(SqlTraceFolder, "Каталог логов СУБД");
+            CheckFieldFilling(CollectPeriod.ToString(), "Период сбора данных");
+            CheckFieldFilling(TempFolder, "Каталог временных файлов");
 
-            if (!Get<bool>("FilterByDatabase"))
+            if (FilterByDatabase)
             {
-                if (Get<string>("Database1CEnterprise") == "") return false;
-                if (Get<string>("DatabaseSql") == "") return false;
+                CheckFieldFilling(Database1CEnterprise, "База данных 1С");
+                CheckFieldFilling(DatabaseSql, "База данных СУБД");
+            }
+        }
+
+        /// <summary>
+        /// Проверяет каталоги данных и возвращает true, если требуется их очистка
+        /// </summary>
+        /// <returns></returns>
+        public static bool CheckFolders()
+        {
+            CheckFolder(TechLogConfFolder, true);
+
+            CheckFolder(TempFolder, true);
+
+            if (!CheckFolderEmpty(TempFolder))
+            {
+                return false;
+            }
+
+            CheckFolder(SqlTraceFolder);
+
+            if (!CheckFolderEmpty(SqlTraceFolder))
+            {
+                return false;
+            }
+
+            CheckFolder(TechLogFolder);
+
+            if (!CheckFolderEmpty(TechLogFolder))
+            {
+                return false;
             }
 
             return true;
         }
 
         /// <summary>
-        /// Устанавливает значения свойств объекта по соответствию имен с настройками
+        /// Проверяет существование папки и возможность записи в нее, при необходимости
         /// </summary>
-        /// <param name="obj">Обрабатываемый объект</param>
-        public static void SetPropertiesValue(object obj)
+        /// <param name="path">Путь к папке</param>
+        /// <param name="checkWritinig">Признак необходимости проверки возможности записи</param>
+        private static void CheckFolder(string path, bool checkWritinig = false)
         {
-            var type = obj.GetType();
+            CheckFolderExist(path);
 
-            var data = settings.ToArray();
-
-            foreach (var setting in data)
+            if (checkWritinig)
             {
-                var property = type.GetProperty(setting.Key);
+                CheckFolderWriting(path);
+            }
+        }
 
-                if (property != null)
-                {
-                    property.SetValue(obj, Convert.ChangeType(setting.Value, property.PropertyType));
-                }
+        /// <summary>
+        /// Проверяет существование папки
+        /// </summary>
+        /// <param name="path">Путь к папке</param>
+        private static void CheckFolderExist(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                throw new Exception($"Каталог по пути \"{path}\" не найден");
+            }
+        }
+
+        /// <summary>
+        /// Проверяет возможность записи в папку
+        /// </summary>
+        /// <param name="path">Путь к папке</param>
+        private static void CheckFolderWriting(string path)
+        {
+            var tempFile = Path.Combine(path, Path.GetRandomFileName());
+
+            try
+            {
+                var s = File.Create(tempFile);
+                s.Close();
+                File.Delete(tempFile);
+            }
+            catch
+            {
+                throw new Exception($"Каталог по пути \"{path}\" не доступен для записи");
+            }
+        }
+
+        /// <summary>
+        /// Проверяет наличие вложенных элементов в папке
+        /// </summary>
+        /// <param name="path">Путь к папке</param>
+        /// <returns></returns>
+        private static bool CheckFolderEmpty(string path)
+        {
+            return !Directory.EnumerateFileSystemEntries(path).Any();
+        }
+
+        /// <summary>
+        /// Проверяет заполнение значения настройки
+        /// </summary>
+        /// <param name="value">Значение настройки</param>
+        /// <param name="msgName"></param>
+        private static void CheckFieldFilling(string value, string msgName)
+        {
+            if (value == string.Empty)
+            {
+                throw new Exception($"Не указано значение настройки \"{msgName}\"");
             }
         }
     }

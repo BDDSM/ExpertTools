@@ -87,7 +87,7 @@ namespace ExpertTools.Helpers
         {
             if (data != string.Empty)
             {
-                await writer.WriteAsync(data);
+                await writer.WriteAsync("\n" + data);
             }
         }
 
@@ -100,26 +100,25 @@ namespace ExpertTools.Helpers
         {
             var normalizedSql = sql;
 
-            int startIndex = normalizedSql.IndexOf("sp_executesql");
-            int endIndex;
-            if (startIndex > 0)
-            {
-                normalizedSql = normalizedSql.Substring(startIndex + 16);
-                endIndex = normalizedSql.IndexOf("'");
-                normalizedSql = normalizedSql.Substring(0, endIndex);
-            }
+            normalizedSql = Regex.Replace(normalizedSql, @"@P\d+", "", RegexOptions.Compiled);
+            normalizedSql = Regex.Replace(normalizedSql, @"#tt\d+", "#TEMPTABLE", RegexOptions.Compiled);
+            normalizedSql = Regex.Replace(normalizedSql, @"\(\d+\)", "#NUM", RegexOptions.Compiled);
+            normalizedSql = normalizedSql.Replace("\n", "");
+            normalizedSql = normalizedSql.Replace("\r", "");
+            normalizedSql = normalizedSql.Replace(" ", "");
+            normalizedSql = normalizedSql.Replace("{", "");
+            normalizedSql = normalizedSql.Replace("}", "");
+            normalizedSql = normalizedSql.Replace("\"", "");
+            normalizedSql = normalizedSql.Replace("'", "");
+            normalizedSql = normalizedSql.Replace(".", "");
+            normalizedSql = normalizedSql.Replace(",", "");
+            normalizedSql = normalizedSql.Replace(";", "");
+            normalizedSql = normalizedSql.Replace(":", "");
+            normalizedSql = normalizedSql.Replace("@", "");
+            normalizedSql = normalizedSql.Replace("?", "");
+            normalizedSql = normalizedSql.Replace("=", "");
 
-            endIndex = normalizedSql.IndexOf("p_0:");
-
-            if (endIndex > 0)
-            {
-                normalizedSql = normalizedSql.Substring(0, endIndex);
-            }
-
-            normalizedSql = Regex.Replace(normalizedSql, @"@P\d+", "?");
-            normalizedSql = Regex.Replace(normalizedSql, "\n", "");
-
-            return await Task.FromResult(normalizedSql.Trim());
+            return await Task.FromResult(normalizedSql.Trim().ToUpper());
         }
 
         /// <summary>
@@ -127,11 +126,11 @@ namespace ExpertTools.Helpers
         /// </summary>
         public static void ClearFolders()
         {
-            ClearFolder(Config.Get<string>("TechLogFolder"));
+            ClearFolder(Config.TechLogFolder);
 
-            ClearFolder(Config.Get<string>("SqlTraceFolder"));
+            ClearFolder(Config.SqlTraceFolder);
 
-            ClearFolder(Config.Get<string>("TempFolder"));
+            ClearFolder(Config.TempFolder);
         }
 
         /// <summary>
@@ -152,53 +151,10 @@ namespace ExpertTools.Helpers
         }
 
         /// <summary>
-        /// Проверяет каталоги логов и временных файло на наличие вложенных элементов
+        /// Записывает данные в лог приложения
         /// </summary>
-        public static bool CheckFolders()
-        {
-            var result = true;
-
-            if (!CheckFolder(Config.Get<string>("TechLogFolder"))) result = false;
-
-            if (!CheckFolder(Config.Get<string>("SqlTraceFolder"))) result = false;
-
-            if (!CheckFolder(Config.Get<string>("TempFolder"))) result = false;
-
-            CheckWriteInFolder(Config.Get<string>("TechLogConfFolder"));
-
-            return result;
-        }
-
-        /// <summary>
-        /// Проверяет переданный каталог на наличие вложенных элементов
-        /// </summary>
-        /// <param name="folder">Каталог</param>
-        public static bool CheckFolder(string folder)
-        {
-            if (!Directory.Exists(folder))
-            {
-                throw new Exception($"Каталог по пути \"{folder}\" не обнаружен");
-            }
-
-            return !Directory.EnumerateFileSystemEntries(folder).Any();
-        }
-
-        private static void CheckWriteInFolder(string path)
-        {
-            var tempFile = Path.Combine(path, Path.GetRandomFileName());
-
-            try
-            {
-                var s = File.Create(tempFile);
-                s.Close();
-                File.Delete(tempFile);
-            }
-            catch
-            {
-                throw new Exception($"Каталог по пути \"{path}\" не доступен для записи");
-            }
-        }
-
+        /// <param name="text">Текст для записи</param>
+        /// <returns></returns>
         public static async Task WriteLog(string text)
         {
             var path = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "log.txt");
@@ -209,15 +165,17 @@ namespace ExpertTools.Helpers
             }
         }
 
+        /// <summary>
+        /// Возвращает список баз, если возможно
+        /// </summary>
+        /// <returns></returns>
         public static async Task<List<DatabaseItem>> GetBases()
         {
             var bases = new List<DatabaseItem>();
 
             try
             {
-                var confFolder = Config.Get<string>("TechLogConfFolder");
-
-                var rootDirectory = Directory.GetParent(confFolder);
+                var rootDirectory = Directory.GetParent(Config.TechLogConfFolder);
 
                 var files = Directory.GetFiles(Path.Combine(rootDirectory.FullName, "srvinfo"), "1CV8Clst.lst", SearchOption.AllDirectories);
 
@@ -250,6 +208,31 @@ namespace ExpertTools.Helpers
             catch { }
 
             return bases;
+        }
+
+        /// <summary>
+        /// Возвращает поток для записи обработанных данных
+        /// </summary>
+        /// <param name="filePath">Путь к файлу в который открываается поток</param>
+        /// <returns></returns>
+        public static StreamWriter GetOutputStream(string filePath)
+        {
+            var contextStream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
+            var contextWriter = new StreamWriter(contextStream, Encoding.GetEncoding(1251));
+
+            return contextWriter;
+        }
+
+        /// <summary>
+        /// Заменяет в тексте переменную формата [variable] на указанное значение
+        /// </summary>
+        /// <param name="text">Обрабатываемый текст</param>
+        /// <param name="variable">Название переменной</param>
+        /// <param name="value">Подсавляемое значение переменной</param>
+        /// <returns></returns>
+        public static void SetVariableValue(ref string text, string variable, string value)
+        {
+            text = text.Replace($"[{variable}]", value);
         }
     }
 }

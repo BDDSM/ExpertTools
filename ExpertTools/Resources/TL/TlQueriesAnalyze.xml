@@ -1,0 +1,12 @@
+﻿<config xmlns="http://v8.1c.ru/v8/tech-log">
+  <log history="[CollectPeriod]" location="[TechLogFolder]">
+    <event>
+      <eq property="name" value="DBMSSQL"/>
+    </event>
+    <property name="Sql"/>
+    <property name="Usr"/>
+    <property name="Context"/>
+    <property name="t:connectID"/>
+    <property name="t:clientID"/>
+  </log>
+</config>

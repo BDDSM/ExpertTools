@@ -64,7 +64,7 @@ namespace ExpertTools.Properties {
         ///   Ищет локализованную строку, похожую на USE [DATABASE_NAME];
         ///BULK INSERT [TABLE_NAME]
         ///FROM &apos;[BULK_FILE_PATH]&apos;
-        ///WITH (FIRSTROW = 2, CODEPAGE = &apos;1251&apos;, FIELDTERMINATOR = &apos;[FIELD_SEPARATOR]&apos;, ROWTERMINATOR = &apos;[ROW_SEPARATOR]&apos;).
+        ///WITH (FIRSTROW = 1, CODEPAGE = &apos;1251&apos;, FIELDTERMINATOR = &apos;[FIELD_SEPARATOR]&apos;, ROWTERMINATOR = &apos;[ROW_SEPARATOR]&apos;).
         /// </summary>
         internal static string bulk_insert {
             get {
@@ -87,56 +87,26 @@ namespace ExpertTools.Properties {
         ///
         ///--Таблицы базы данных
         ///
-        ///CREATE TABLE Tldbmssql
+        ///CREATE TABLE QueriesAnalyzeTlQueries
         ///(
         ///	id INT IDENTITY NOT NULL,
-        ///	sql NVARCHAR(MAX) NOT NULL,
-        ///	normalized_sql NVARCHAR(MAX) NOT NULL,
+        ///	_Period datetime2 not null,
         ///	_user NVARCHAR(200) NOT NULL,
-        ///	context_first_line NVARCHAR(MAX) NOT NULL,
-        ///	context_last_line NVARCHAR(MAX) NOT NULL,
+        ///	connectId NVARCHAR(20) NOT NULL,
+        ///	clientId NVARCHAR(20) NOT NULL,
+        ///	normalized_sql NVARCHAR(MAX) NOT NULL,
+        ///	context_first_line NVARCHAR(400) NOT NULL,
+        ///	context_last_line NVARCHAR(400) NOT NULL,
+        ///	context_exists BIT NOT NULL,
         ///	_hash NVARCHAR(32) NOT NULL,
-        ///	CONSTRAINT PK_Tldbmssql PRIMARY KEY(id)
+        ///	CONSTRAINT PK_QueriesAnalyzeTlQueries PRIMARY KEY(id)
         ///);
         ///
-        ///CREATE TABLE Sqlqueries
-        ///(
-        ///	id INT IDENTITY(1,1) NOT NULL,
-        ///	sql NVARCHAR(MAX) NOT NULL,
-        ///	normalized_sql NVARCHAR(MAX) NOT NULL,
-        ///	dura [остаток строки не уместился]&quot;;.
+        ///CREATE TA [остаток строки не уместился]&quot;;.
         /// </summary>
         internal static string create_database_structure {
             get {
                 return ResourceManager.GetString("create_database_structure", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на CREATE EVENT SESSION [SESSION_NAME] ON SERVER
-        ///ADD EVENT sqlserver.rpc_completed,
-        ///ADD EVENT sqlserver.sql_batch_completed
-        ///ADD TARGET package0.event_file(SET filename = N&apos;[EVENT_FILE_PATH]&apos;,max_file_size=(10240))
-        ///WITH (MAX_DISPATCH_LATENCY=4 SECONDS).
-        /// </summary>
-        internal static string create_session_for_join {
-            get {
-                return ResourceManager.GetString("create_session_for_join", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Ищет локализованную строку, похожую на CREATE EVENT SESSION [SESSION_NAME] ON SERVER
-        ///ADD EVENT sqlserver.rpc_completed(
-        ///	WHERE([sqlserver.database_name]=N&apos;[DATABASE_NAME_FILTER]&apos;)),
-        ///ADD EVENT sqlserver.sql_batch_completed(
-        ///	WHERE([sqlserver.database_name]=N&apos;[DATABASE_NAME_FILTER]&apos;))
-        ///ADD TARGET package0.event_file(SET filename = N&apos;[EVENT_FILE_PATH]&apos;,max_file_size=(10240))
-        ///WITH (MAX_DISPATCH_LATENCY=4 SECONDS).
-        /// </summary>
-        internal static string create_session_for_join_filter {
-            get {
-                return ResourceManager.GetString("create_session_for_join_filter", resourceCulture);
             }
         }
         
@@ -160,16 +130,6 @@ namespace ExpertTools.Properties {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на --Удаление базы данных
-        ///DROP DATABASE IF EXISTS [DATABASE_NAME];.
-        /// </summary>
-        internal static string drop_database {
-            get {
-                return ResourceManager.GetString("drop_database", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Ищет локализованную строку, похожую на SELECT event_data FROM sys.fn_xe_file_target_read_file(&apos;[SESSION_FILES_PATH]&apos;, null, null, null).
         /// </summary>
         internal static string get_session_events {
@@ -179,13 +139,22 @@ namespace ExpertTools.Properties {
         }
         
         /// <summary>
-        ///   Ищет локализованную строку, похожую на --Удаление базы данных
-        ///ALTER DATABASE [DATABASE_NAME]
-        ///SET OFFLINE WITH ROLLBACK IMMEDIATE.
+        ///   Ищет локализованную строку, похожую на USE [DATABASE_NAME];
+        ///SELECT
+        ///	SUM(duration) AS duration,
+        ///	SUM(physical_reads) AS physical_reads,
+        ///	SUM(logical_reads) AS logical_reads,
+        ///	SUM(writes) AS writes,
+        ///	SUM(cpu_time) AS cpu_time,
+        ///	_hash AS _hash
+        ///INTO QueriesAnalyzeSqlQueries
+        ///FROM QueriesAnalyzeSqlQueriesAvg
+        ///GROUP BY
+        ///	_hash;.
         /// </summary>
-        internal static string kill_connections {
+        internal static string group_queries_avg {
             get {
-                return ResourceManager.GetString("kill_connections", resourceCulture);
+                return ResourceManager.GetString("group_queries_avg", resourceCulture);
             }
         }
         
@@ -206,6 +175,75 @@ namespace ExpertTools.Properties {
         internal static string stop_session {
             get {
                 return ResourceManager.GetString("stop_session", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на &lt;config xmlns=&quot;http://v8.1c.ru/v8/tech-log&quot;&gt;
+        ///  &lt;log history=&quot;[CollectPeriod]&quot; location=&quot;[TechLogFolder]&quot;&gt;
+        ///    &lt;event&gt;
+        ///      &lt;eq property=&quot;name&quot; value=&quot;DBMSSQL&quot;/&gt;
+        ///    &lt;/event&gt;
+        ///    &lt;property name=&quot;Sql&quot;/&gt;
+        ///    &lt;property name=&quot;Usr&quot;/&gt;
+        ///    &lt;property name=&quot;Context&quot;/&gt;
+        ///    &lt;property name=&quot;t:connectID&quot;/&gt;
+        ///    &lt;property name=&quot;t:clientID&quot;/&gt;
+        ///  &lt;/log&gt;
+        ///&lt;/config&gt;.
+        /// </summary>
+        internal static string TlQueriesAnalyze {
+            get {
+                return ResourceManager.GetString("TlQueriesAnalyze", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на &lt;config xmlns=&quot;http://v8.1c.ru/v8/tech-log&quot;&gt;
+        ///  &lt;log history=&quot;[CollectPeriod]&quot; location=&quot;[TechLogFolder]&quot;&gt;
+        ///    &lt;event&gt;
+        ///      &lt;eq property=&quot;name&quot; value=&quot;DBMSSQL&quot;/&gt;
+        ///      &lt;eq property=&quot;p:processName&quot; value=&quot;[Database1CEnterprise]&quot;/&gt;
+        ///    &lt;/event&gt;
+        ///    &lt;property name=&quot;Sql&quot;/&gt;
+        ///    &lt;property name=&quot;Usr&quot;/&gt;
+        ///    &lt;property name=&quot;Context&quot;/&gt;
+        ///    &lt;property name=&quot;t:connectID&quot;/&gt;
+        ///    &lt;property name=&quot;t:clientID&quot;/&gt;
+        ///  &lt;/log&gt;
+        ///&lt;/config&gt;.
+        /// </summary>
+        internal static string TlQueriesAnalyzeDbFilter {
+            get {
+                return ResourceManager.GetString("TlQueriesAnalyzeDbFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на CREATE EVENT SESSION [SESSION_NAME] ON SERVER
+        ///ADD EVENT sqlserver.rpc_completed,
+        ///ADD EVENT sqlserver.sql_batch_completed
+        ///ADD TARGET package0.event_file(SET filename = N&apos;[EVENT_FILE_PATH]&apos;,max_file_size=(10240))
+        ///WITH (MAX_DISPATCH_LATENCY=4 SECONDS).
+        /// </summary>
+        internal static string XeQueriesAnalyze {
+            get {
+                return ResourceManager.GetString("XeQueriesAnalyze", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Ищет локализованную строку, похожую на CREATE EVENT SESSION [SESSION_NAME] ON SERVER
+        ///ADD EVENT sqlserver.rpc_completed(
+        ///	WHERE([sqlserver.database_name]=N&apos;[DATABASE_NAME_FILTER]&apos;)),
+        ///ADD EVENT sqlserver.sql_batch_completed(
+        ///	WHERE([sqlserver.database_name]=N&apos;[DATABASE_NAME_FILTER]&apos;))
+        ///ADD TARGET package0.event_file(SET filename = N&apos;[EVENT_FILE_PATH]&apos;,max_file_size=(10240))
+        ///WITH (MAX_DISPATCH_LATENCY=4 SECONDS).
+        /// </summary>
+        internal static string XeQueriesAnalyzeDbFilter {
+            get {
+                return ResourceManager.GetString("XeQueriesAnalyzeDbFilter", resourceCulture);
             }
         }
     }

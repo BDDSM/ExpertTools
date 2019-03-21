@@ -1,30 +1,41 @@
 ﻿using System.Threading.Tasks;
 using System;
+using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using System.Security.Cryptography;
 using System.IO;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks.Dataflow;
 using System.Xml;
 using System.Xml.Linq;
+using ExpertTools.Model;
 
 namespace ExpertTools.Helpers
 {
     public static class TL
     {
-        public static string DataBaseFilter { get; set; } = "";
-
         #region Common
+
+        /// <summary>
+        /// Возвращает дату файла технологического журнала
+        /// </summary>
+        /// <param name="filePath">Путь к файлу</param>
+        /// <returns></returns>
+        public static string GetFileDate(string filePath)
+        {
+            var info = Path.GetFileNameWithoutExtension(filePath);
+
+            return "20" + info.Substring(0, 2) + "-" + info.Substring(2, 2) + "-" + info.Substring(4, 2) + " " + info.Substring(6, 2);
+        }
 
         /// <summary>
         /// Возвращает пути ко всем (включая вложенные) файлам *.log
         /// </summary>
-        /// <param name="logDirectoryPath">Каталог для поиска файлов</param>
         /// <returns>Массив путей файлов *.log</returns>
-        public static string[] GetLogFilesPaths(string logDirectoryPath)
+        public static string[] GetLogFilesPaths()
         {
-            return Directory.GetFiles(logDirectoryPath, "*.log", SearchOption.AllDirectories);
+            return Directory.GetFiles(Config.TechLogFolder, "*.log", SearchOption.AllDirectories);
         }
 
         /// <summary>
@@ -32,8 +43,7 @@ namespace ExpertTools.Helpers
         /// </summary>
         public static void DeleteLogCfg()
         {
-            var techLogConfFolder = Config.Get<string>("TechLogConfFolder");
-            var logcfgPath = Path.Combine(techLogConfFolder, "logcfg.xml");
+            var logcfgPath = Path.Combine(Config.TechLogConfFolder, "logcfg.xml");
 
             if (File.Exists(logcfgPath)) File.Delete(logcfgPath);
         }
@@ -43,116 +53,72 @@ namespace ExpertTools.Helpers
         /// </summary>
         /// <param name="minutes">Количество минут сбора данных</param>
         /// <returns></returns>
-        private static int GetCollectPeriod(int minutes)
+        public static int GetCollectPeriod(int minutes)
         {
             return (int)Math.Ceiling((double)minutes / 60);
         }
 
         /// <summary>
-        /// Создает конфигурационный файл технологического журнала
+        /// Возвращает период возникновения события
         /// </summary>
-        public static void CreateLogCfg()
+        /// <param name="data">Данные события</param>
+        /// <returns></returns>
+        public static string GetEventDateTime(string data)
         {
-            var techLogConfFolder = Config.Get<string>("TechLogConfFolder");
-            var techLogFolder = Config.Get<string>("TechLogFolder");
-            var collectPeriod = GetCollectPeriod(Config.Get<int>("CollectPeriod"));
-            var logcfgPath = Path.Combine(techLogConfFolder, "logcfg.xml");
-
-            if (File.Exists(logcfgPath)) File.Delete(logcfgPath);
-
-            using (var writer = new StreamWriter(logcfgPath))
-            {
-                var document = new XDocument();
-                var namespase = XNamespace.Get("http://v8.1c.ru/v8/tech-log");
-
-                var configElem = new XElement(namespase + "config");
-                document.Add(configElem);
-
-                var logElem = new XElement(namespase + "log");
-                logElem.Add(new XAttribute("history", collectPeriod.ToString()));
-                logElem.Add(new XAttribute("location", techLogFolder));
-                configElem.Add(logElem);
-
-                var eventElem = new XElement(namespase + "event");
-                logElem.Add(eventElem);
-
-                var eq1Elem = new XElement(namespase + "eq");
-                eq1Elem.Add(new XAttribute("property", "name"));
-                eq1Elem.Add(new XAttribute("value", "DBMSSQL"));
-                eventElem.Add(eq1Elem);
-
-                if (DataBaseFilter != "")
-                {
-                    var eq2Elem = new XElement(namespase + "eq");
-                    eq2Elem.Add(new XAttribute("property", "p:processName"));
-                    eq2Elem.Add(new XAttribute("value", DataBaseFilter));
-                    eventElem.Add(eq2Elem);
-                }
-
-                var SQLHelperropElem = new XElement(namespase + "property");
-                SQLHelperropElem.Add(new XAttribute("name", "Sql"));
-                logElem.Add(SQLHelperropElem);
-
-                var usrPropElem = new XElement(namespase + "property");
-                usrPropElem.Add(new XAttribute("name", "Usr"));
-                logElem.Add(usrPropElem);
-
-                var contextPropElem = new XElement(namespase + "property");
-                contextPropElem.Add(new XAttribute("name", "Context"));
-                logElem.Add(contextPropElem);
-
-                writer.Write(document.ToString());
-            }
+            return data.Substring(0, data.IndexOf("-", 10));
         }
 
         /// <summary>
-        /// Запускает сбор технологического журнала
-        /// </summary>
-        public static void StartCollectTechLog()
-        {
-            CreateLogCfg();
-        }
-
-        /// <summary>
-        /// Останавливает сбор технологического журнала
-        /// </summary>
-        public static void StopCollectTechLog()
-        {
-            DeleteLogCfg();
-        }
-
-        /// <summary>
-        /// Выполняет обработку технологического журнала
+        /// Ожидает появления первой папки rphost в каталоге сбора технологического журнала
         /// </summary>
         /// <returns></returns>
-        public static async Task ProcessTechLog()
+        public static Task WaitStartCollectData()
         {
-            var tempFolder = Config.Get<string>("TempFolder");
-            var filePath = Path.Combine(tempFolder, "normalized_tech_log.csv");
-            var techLogFolder = Config.Get<string>("TechLogFolder");
+            var tcs = new TaskCompletionSource<bool>();
 
-            using (var filestream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite))
-            using (var writer = new StreamWriter(filestream, Encoding.GetEncoding(1251)))
+            var path = Config.TechLogFolder;
+
+            var watcher = new FileSystemWatcher
             {
-                await NormalizeEventsForJoin(techLogFolder, writer);
+                NotifyFilter = NotifyFilters.DirectoryName,
+                Path = path,
+                Filter = "rphost*",
+                EnableRaisingEvents = true,
+            };
+
+            watcher.Created += (sender, args) =>
+            {
+                watcher.EnableRaisingEvents = false;
+                tcs.TrySetResult(true);
+                watcher.Dispose();
+            };
+
+            return tcs.Task;
+        }
+
+        private static string GetLogCfgText(string analyzerName)
+        {
+            var text = "";
+
+            if (Config.FilterByDatabase)
+            {
+                text = Properties.Resources.ResourceManager.GetString("Tl" + analyzerName + "DbFilter");
             }
+            else
+            {
+                text = Properties.Resources.ResourceManager.GetString("Tl" + analyzerName);
+            }
+
+            Common.SetVariableValue(ref text, "Database1CEnterprise", Config.Database1CEnterprise);
+            Common.SetVariableValue(ref text, "CollectPeriod", GetCollectPeriod(Config.CollectPeriod).ToString());
+            Common.SetVariableValue(ref text, "TechLogFolder", Config.TechLogFolder);
+
+            return text;
         }
 
         #endregion
 
         #region ParseMethods
-
-        /// <summary>
-        /// Если переданная строка - это начало описания нового события, то возвращает true
-        /// </summary>
-        /// <param name="data">Строка текста</param>
-        /// <returns></returns>
-        public static async Task<bool> IsNewEventLineAsync(string data)
-        {
-            string pattern = @"\d\d:\d\d.\d+-";
-
-            return await Task.FromResult(Regex.IsMatch(data, pattern));
-        }
 
         /// <summary>
         /// Проверяет тип события и возвращает результат проверки
@@ -165,51 +131,58 @@ namespace ExpertTools.Helpers
         }
 
         /// <summary>
-        /// Возвращает значение свойства Sql из описания события
+        /// Возвращает очищенный текст запроса
         /// </summary>
         /// <param name="data">Строка с описанием события</param>
-        /// <returns>Значение свойства Sql</returns>
-        public static async Task<string> GetSqlAsync(string data)
+        /// <returns>Очищенный текст запроса</returns>
+        public static async Task<string> ClearSql(string data)
         {
             if (!data.Contains("Sql=")) return "";
 
-            var sql = data;
-            var endIndex = 0;
+            string sql = data.Substring(data.IndexOf("Sql=", StringComparison.OrdinalIgnoreCase) + 4);
 
-            int startIndex = sql.IndexOf("Sql=\"");
+            int startIndex = sql.IndexOf("sp_executesql", StringComparison.OrdinalIgnoreCase);
+            int endIndex;
 
-            if (startIndex != -1)
+            if (startIndex > 0)
             {
-                sql = sql.Substring(startIndex + 5);
-                endIndex = sql.IndexOf("\"");
-                sql = sql.Substring(0, endIndex);
+                sql = sql.Substring(startIndex + 16);
+
+                endIndex = sql.IndexOf("', N'@P", StringComparison.OrdinalIgnoreCase);
+
+                if (endIndex > 0)
+                {
+                    sql = sql.Substring(0, endIndex);
+                }
+            }
+
+            var startChar = sql[0];
+
+            if (startChar == '\'')
+            {
+                endIndex = sql.IndexOf('\'', 1);
+                sql = sql.Substring(1, endIndex);
+            }
+            else if (startChar == '"')
+            {
+                endIndex = sql.IndexOf('"', 1);
+                sql = sql.Substring(1, endIndex);
             }
             else
             {
-                startIndex = sql.IndexOf("Sql=\'");
+                endIndex = sql.IndexOf(',');
 
-                if (startIndex != -1)
+                if (endIndex > 0)
                 {
-                    sql = sql.Substring(startIndex + 5);
-                    endIndex = sql.IndexOf("'");
-
-                    if (endIndex > 0)
-                    {
-                        sql = sql.Substring(0, endIndex);
-                    }
+                    sql = sql.Substring(0, endIndex);
                 }
-                else
-                {
-                    startIndex = sql.IndexOf("Sql=");
+            }
 
-                    sql = sql.Substring(startIndex + 4);
-                    endIndex = sql.IndexOf(",");
+            endIndex = sql.IndexOf("p_0:", StringComparison.OrdinalIgnoreCase);
 
-                    if (endIndex > 0)
-                    {
-                        sql = sql.Substring(0, endIndex);
-                    }
-                }
+            if (endIndex > 0)
+            {
+                sql = sql.Substring(0, endIndex);
             }
 
             return await Task.FromResult(sql.Trim());
@@ -220,7 +193,7 @@ namespace ExpertTools.Helpers
         /// </summary>
         /// <param name="data">Строка с описанием события</param>
         /// <returns>Значение свойства Duration</returns>
-        public static async Task<int> GetDurationAsync(string data)
+        public static async Task<int> GetDuration(string data)
         {
             var startIndex = data.IndexOf("-");
             var endIndex = data.IndexOf(",", startIndex);
@@ -233,37 +206,96 @@ namespace ExpertTools.Helpers
         /// Возвращает значение свойства Context из описания события
         /// </summary>
         /// <param name="data">Строка с описанием события</param>
-        /// <param name="lastLine">Если true, то будет возвращена только последняя строка контекста</param>
         /// <returns>Значение свойства Context</returns>
-        public static async Task<string> GetContextAsync(string data)
+        public static async Task<string> GetContext(string data)
         {
-            var context = "";
+            if (!data.Contains(",Context")) return "";
 
-            var startIndex = data.IndexOf("Context=");
+            int startIndex = data.IndexOf(",Context=", StringComparison.OrdinalIgnoreCase) + 9;
+            int endIndex;
 
-            if (startIndex > 0)
+            var startChar = data[startIndex];
+
+            switch (startChar)
             {
-                context = data.Substring(startIndex + 9);
-
-                var lastIndex = context.IndexOf("'");
-
-                if (lastIndex > 0)
-                {
-                    context = context.Substring(0, lastIndex);
-                }
+                case '"':
+                    startIndex += 1;
+                    endIndex = data.LastIndexOf("\"", StringComparison.OrdinalIgnoreCase);
+                    break;
+                case '\'':
+                    startIndex += 1;
+                    endIndex = data.LastIndexOf("'", StringComparison.OrdinalIgnoreCase);
+                    break;
+                default:
+                    endIndex = data.IndexOf(",", startIndex, StringComparison.OrdinalIgnoreCase);
+                    break;
             }
 
-            context = context.Trim().Replace("\"", "");
+            string context;
 
-            return await Task.FromResult(context);
+            if (endIndex > 0)
+            {
+                context = data.Substring(startIndex, endIndex - startIndex);
+
+            }
+            else
+            {
+                context = data.Substring(startIndex);
+            }
+
+            context = context.Replace("\"", "'");
+
+            return await Task.FromResult(context.Trim());
         }
 
         /// <summary>
-        /// Возвращает первую строку контекста (асинхронно)
+        /// Возвращает значение свойства t:clientID из описания события
+        /// </summary>
+        /// <param name="data">Строка с описанием события</param>
+        /// <returns>Значение свойства t:clientID</returns>
+        public static async Task<string> GetClientId(string data)
+        {
+            if (!data.Contains(",t:clientID=")) return "";
+
+            int startIndex = data.IndexOf(",t:clientID=", StringComparison.OrdinalIgnoreCase) + 12;
+            var value = data.Substring(startIndex);
+            int endIndex = value.IndexOf(",");
+
+            if (endIndex > 0)
+            {
+                value = value.Substring(0, endIndex);
+            }
+
+            return await Task.FromResult(value.Trim());
+        }
+
+        /// <summary>
+        /// Возвращает значение свойства t:connectId из описания события
+        /// </summary>
+        /// <param name="data">Строка с описанием события</param>
+        /// <returns>Значение свойства t:connectId</returns>
+        public static async Task<string> GetConnectId(string data)
+        {
+            if (!data.Contains(",t:connectID=")) return "";
+
+            int startIndex = data.IndexOf(",t:connectID=", StringComparison.OrdinalIgnoreCase) + 13;
+            var value = data.Substring(startIndex);
+            int endIndex = value.IndexOf(",");
+
+            if (endIndex > 0)
+            {
+                value = value.Substring(0, endIndex);
+            }
+ 
+            return await Task.FromResult(value.Trim());
+        }
+
+        /// <summary>
+        /// Возвращает первую строку контекста
         /// </summary>
         /// <param name="context"></param>
         /// <returns>Первая строка контекста</returns>
-        public static async Task<string> GetFirstLineContextAsync(string context)
+        public static async Task<string> GetFirstLineContext(string context)
         {
             var firstLine = context;
 
@@ -280,11 +312,11 @@ namespace ExpertTools.Helpers
         }
 
         /// <summary>
-        /// Возвращает последнюю строку контекста (асинхронно)
+        /// Возвращает последнюю строку контекста
         /// </summary>
         /// <param name="context"></param>
         /// <returns>Последняя строка контекста</returns>
-        public static async Task<string> GetLastLineContextAsync(string context)
+        public static async Task<string> GetLastLineContext(string context)
         {
             var lastLine = context;
 
@@ -305,16 +337,20 @@ namespace ExpertTools.Helpers
         /// </summary>
         /// <param name="data">Строка с описанием события</param>
         /// <returns>Значение свойства Usr</returns>
-        public static async Task<string> GetUserAsync(string data)
+        public static async Task<string> GetUser(string data)
         {
-            var startIndex = data.IndexOf("Usr=");
+            var startIndex = data.IndexOf("Usr=", StringComparison.OrdinalIgnoreCase);
             var user = "";
 
             if (startIndex > 0)
             {
                 user = data.Substring(startIndex + 4);
                 int endIndex = user.IndexOf(",");
-                user = user.Substring(0, endIndex);
+
+                if (endIndex > 0)
+                {
+                    user = user.Substring(0, endIndex);
+                }
             }
 
             user = user.Trim();
@@ -324,142 +360,68 @@ namespace ExpertTools.Helpers
 
         #endregion
 
-        #region NormalizeForJoinWithSQLTrace
-
         /// <summary>
-        /// Нормализует технологический журнал и выводит в переданный поток для дальнейшего соединения с трассировкой SQL
+        /// Читает построчно файл технологического журнала, группирует события и отдает их на обработку ответственным блокам
         /// </summary>
-        /// <param name="outputStream">Поток для вывода данных</param>
-        public static async Task NormalizeEventsForJoin(string logDirectoryPath, StreamWriter outputStream)
-        {
-            var logFiles = GetLogFilesPaths(logDirectoryPath);
-
-            var blockOptions = new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount };
-
-            var writeToOutputStream = new ActionBlock<string>(text => Common.WriteToOutputStream(text, outputStream));
-
-            var normalizeEventForJoin = new TransformBlock<string, string>(NormalizeEventForJoin, blockOptions);
-
-            var readFile = new ActionBlock<string>(async text => await ReadFile(text, "DBMSSQL", normalizeEventForJoin), blockOptions);
-
-            normalizeEventForJoin.LinkTo(writeToOutputStream, new DataflowLinkOptions() { PropagateCompletion = true });
-
-            foreach (var file in logFiles)
-            {
-                await readFile.SendAsync(file);
-            }
-
-            readFile.Complete();
-
-            await readFile.Completion.ContinueWith(c => normalizeEventForJoin.Complete());
-
-            await writeToOutputStream.Completion;
-        }
-
-        #endregion
-
-        #region BlockMethods
-
-        private static async Task<string> NormalizeEventForJoin(string data)
-        {
-                var sql = await GetSqlAsync(data);
-
-                if (sql == string.Empty) return "";
-
-                var normalizedSql = await Common.GetNormalizedSql(sql);
-                var user = await GetUserAsync(data);
-                var context = await GetContextAsync(data);
-                var firstLine = await GetFirstLineContextAsync(context);
-                var lastLine = await GetLastLineContextAsync(context);
-
-                var hash = await Common.GetMD5Hash(normalizedSql);
-
-                return "\n" + 
-                    Common.FS +
-                    sql +
-                    Common.FS +
-                    normalizedSql + 
-                    Common.FS + 
-                    user + 
-                    Common.FS +
-                    firstLine +
-                    Common.FS +
-                    lastLine +
-                    Common.FS + 
-                    hash + 
-                    Common.LS;
-        }
-
-        #endregion
-
-        #region CommonBlockMethods
-
-        /// <summary>
-        /// Читает переданный файл и отправляет разобранные события в targetBlock
-        /// </summary>
-        /// <param name="filePath">Путь к файлу</param>
-        /// <param name="eventName">Имя события для отбора</param>
-        /// <param name="targetBlock">Дальнейший блок цепочки</param>
+        /// <param name="events">Набор событий</param>
+        /// <param name="filePath">Путь к файлу технологического журнала</param>
         /// <returns></returns>
-        private static async Task ReadFile(string filePath, string eventName, ITargetBlock<string> targetBlock)
+        public static async Task ReadFile(HashSet<EventDescription> events, string filePath)
         {
+            var fileDate = GetFileDate(filePath);
+
             using (var inputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (var reader = new StreamReader(inputStream))
             {
-                var currentEvent = "";
+                string eventText = "";
+                EventDescription eventDescription = null;
 
                 while (!reader.EndOfStream)
                 {
                     var currentLine = await reader.ReadLineAsync();
 
-                    if (await IsNewEventLineAsync(currentLine) && await IsEventAsync(currentLine, eventName) && currentEvent != string.Empty)
+                    var currentEventDescription = events.FirstOrDefault(c => currentLine.Contains($",{c.Name},"));
+
+                    if (currentEventDescription != null && eventText != string.Empty)
                     {
-                        await targetBlock.SendAsync(currentEvent);
-                        currentEvent = "";
+                        await eventDescription.TargetBlock.SendAsync(fileDate + ":" + eventText);
+
+                        eventText = "";
                     }
 
-                    currentEvent += currentEvent == string.Empty ? currentLine : $"\n{currentLine}";
+                    eventText = string.Concat(eventText, eventText == string.Empty ? currentLine : $"\n{currentLine}");
+
+                    if (currentEventDescription != null)
+                    {
+                        eventDescription = currentEventDescription;
+                    }
+                }
+
+                // Не забудем отправить последнее событие, оно в цикл не попадает
+                if (eventDescription != null && eventText != string.Empty)
+                {
+                    await eventDescription.TargetBlock.SendAsync(fileDate + ":" + eventText);
+
+                    eventText = "";
                 }
             }
         }
 
-        #endregion
-
-        public static Task WaitStartCollectData()
-        {
-            var tcs = new TaskCompletionSource<bool>();
-
-            var path = Config.Get<string>("TechLogFolder");
-
-            var watcher = new FileSystemWatcher
-            {
-                NotifyFilter = NotifyFilters.DirectoryName,
-                Path = path,
-                Filter = "rphost*",
-                EnableRaisingEvents = true,
-            };
-
-            watcher.Created += (sender, args) =>
-            {
-                 watcher.EnableRaisingEvents = false;
-                tcs.TrySetResult(true);
-                watcher.Dispose();
-            };
-
-            return tcs.Task;
-        }
-
         /// <summary>
-        /// Названия событией технологического журнала
+        /// Создает конфигурационный файл технологического журнала
         /// </summary>
-        public enum Event
+        public static async Task CreateLogCfg(string analyzerName)
         {
-            DBMSSQL,
-            TLOCK,
-            TDEADLOCK,
-            TTIMEOUT,
-            CALL,
-            SCALL
+            var lofCfgText = GetLogCfgText(analyzerName);
+
+            var logcfgPath = Path.Combine(Config.TechLogConfFolder, "logcfg.xml");
+
+            if (File.Exists(logcfgPath)) File.Delete(logcfgPath);
+
+            using (var writer = new StreamWriter(logcfgPath))
+            {
+                await writer.WriteAsync(lofCfgText);
+            }
         }
     }
 }
