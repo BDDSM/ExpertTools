@@ -114,11 +114,11 @@ namespace ExpertTools.Core
         /// <returns></returns>
         public async Task HandleTlData()
         {
-            // Paths to the output 
+            // Paths to the output files
             var contextFilePath = Path.Combine(_tempFolder, CONTEXT_TEMP_FILENAME);
             var dbmssqlFilePath = Path.Combine(_tempFolder, DBMSSQL_TEMP_FILENAME);
 
-            // Настройки параллельности для блока конвейера
+            // Settings of the many-threads blocks
             var parallelBlockOptions = new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount, BoundedCapacity = 1000 };
 
             using (var contextWriter = Common.GetOutputStream(contextFilePath))
@@ -126,18 +126,18 @@ namespace ExpertTools.Core
             {
                 HashSet<(string eventName, ITargetBlock<string> nextBlock)> events = new HashSet<(string, ITargetBlock<string>)>();
 
-                // Блоки с выходными потоками для обработанных данных
+                // Blocks with the output streams for processed data
                 var contextOutputBlock = new ActionBlock<string>(async (text) => await Common.WriteToOutputStream(text, contextWriter));
                 var dbmssqlOutputBlock = new ActionBlock<string>(async (text) => await Common.WriteToOutputStream(text, dbmssqlWriter));
 
-                // Блоки обработки данных
+                // Blocks of the processing data
                 var contextBlock = new ActionBlock<string>((text) => HandleContextEvent(text, contextOutputBlock), parallelBlockOptions);
                 events.Add(("Context", contextBlock));
 
                 var dbmssqlBlock = new ActionBlock<string>((text) => HandleDbmssqlEvent(text, dbmssqlOutputBlock), parallelBlockOptions);
                 events.Add(("DBMSSQL", dbmssqlBlock));
 
-                // Блок, читающий файл технологического лога
+                // Reading tech log block
                 var readBlock = new ActionBlock<string>((filePath) => TLHelper.ReadFile(events, filePath), parallelBlockOptions);
 
                 foreach (var file in TLHelper.GetLogFiles(LogCfg))
@@ -145,17 +145,17 @@ namespace ExpertTools.Core
                     await readBlock.SendAsync(file);
                 }
 
-                // Отметим блок как законченный
+                // Mark block as completed
                 readBlock.Complete();
 
-                // Создадим связи для передачи готовности блоков по цепочке
+                // Create relations between blocks (signals "complete" to the next blocks)
                 await readBlock.Completion.ContinueWith(c => dbmssqlBlock.Complete());
                 await dbmssqlBlock.Completion.ContinueWith(c => dbmssqlOutputBlock.Complete());
 
                 await readBlock.Completion.ContinueWith(c => contextBlock.Complete());
                 await contextBlock.Completion.ContinueWith(c => contextOutputBlock.Complete());
 
-                // Ожидания записи обработанных данных
+                // Wait writing processed data to the temp files
                 await contextOutputBlock.Completion;
                 await dbmssqlOutputBlock.Completion;
             }
@@ -171,12 +171,12 @@ namespace ExpertTools.Core
         {
             var sql = await TLHelper.GetPropertyValue(text, Logcfg.SQL_PR);
 
-            // Бывают попадаются странные записи без свойств
+            // If "sql" property is empty then such event skipping
             if (sql == string.Empty) return;
 
             var clientId = await TLHelper.GetPropertyValue(text, Logcfg.CLIENT_ID_PR);
 
-            // Если clientId пустой, значит это системный вызов, такие события пропускаем
+            // If "client id" property is empty then it`s a system call, such event skipping
             if (clientId == string.Empty) return;
 
             var clearedSql = await TLHelper.ClearSql(sql);
@@ -226,10 +226,10 @@ namespace ExpertTools.Core
         {
             var clientId = await TLHelper.GetPropertyValue(text, Logcfg.CLIENT_ID_PR);
 
-            // Если clientId пустой, значит это системный вызов, такие события пропускаем
+            // If "client id" property is empty then it`s a system call, such event skipping
             if (clientId == string.Empty) return;
 
-            var dateTime = TLHelper.GetEventDateTime(text);
+            var dateTime = await TLHelper.GetPropertyValue(text, Logcfg.DATETIME_PR);
             var context = await TLHelper.GetPropertyValue(text, Logcfg.CONTEXT_PR);
             var firstLineContext = await TLHelper.GetFirstLineContext(context);
             var lastLineContext = await TLHelper.GetLastLineContext(context);

@@ -10,7 +10,7 @@ using System.Xml.Linq;
 namespace ExpertTools.Core
 {
     /// <summary>
-    /// Provides static methods for working with technology log
+    /// Provides static methods for working with the technology log
     /// </summary>
     public partial class TLHelper
     {
@@ -25,7 +25,7 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Returns paths of log files
+        /// Returns paths of the log files
         /// </summary>
         /// <param name="logcfg">Logcfg instance</param>
         /// <returns></returns>
@@ -42,7 +42,7 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Waits appearance of first folder on the collection data folder
+        /// Waits appearance of the first folder on the collection data folder
         /// </summary>
         /// <returns></returns>
         public static Task WaitStartCollectData(Logcfg logcfg)
@@ -103,11 +103,14 @@ namespace ExpertTools.Core
 
             if (propertyName == Logcfg.DATETIME_PR)
             {
-                value = await GetEventDateTime(data);
+                value = data.Substring(0, data.IndexOf("-", 10));
             }
             else if (propertyName == Logcfg.DURATION_PR)
             {
-                value = await GetDurationValue(data);
+                var startIndex = data.IndexOf("-");
+                var endIndex = data.IndexOf(",", startIndex);
+
+                value = data.Substring(startIndex, endIndex);
             }
             else
             {
@@ -150,30 +153,6 @@ namespace ExpertTools.Core
             value = value.Trim();
 
             return await Task.FromResult(value);
-        }
-
-        /// <summary>
-        /// Returns the date and the time of the event
-        /// </summary>
-        /// <param name="data">Event data</param>
-        /// <returns></returns>
-        public static async Task<string> GetEventDateTime(string data)
-        {
-            return await Task.FromResult(data.Substring(0, data.IndexOf("-", 10)));
-        }
-
-        /// <summary>
-        /// Returns a duration of the event
-        /// </summary>
-        /// <param name="data">Event data</param>
-        /// <returns>Duration</returns>
-        private static async Task<string> GetDurationValue(string data)
-        {
-            var startIndex = data.IndexOf("-");
-            var endIndex = data.IndexOf(",", startIndex);
-            string duration = data.Substring(startIndex, endIndex);
-
-            return await Task.FromResult(duration);
         }
 
         /// <summary>
@@ -270,7 +249,7 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Reads file line by line, groups event lines and sends the result to the next block
+        /// Reads a file line by line, groups event lines and sends the result to the next block
         /// </summary>
         /// <param name="events">Events</param>
         /// <param name="filePath">Path to the log file</param>
@@ -282,42 +261,40 @@ namespace ExpertTools.Core
             using (var inputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (var reader = new StreamReader(inputStream))
             {
-                // Текст текущего события
+                // Text of the current event
                 string eventText = "";
-                // Признак необходимости обработки считываемых строк события
+                // Skip line flag
                 bool skipLine = false;
-                // Текущее событие
+                // Current event
                 (string eventName, ITargetBlock<string> targetBlock) currentEvent = default;
 
                 while (!reader.EndOfStream)
                 {
-                    // Текущая считанная строка технологического журнала
                     var currentLine = await reader.ReadLineAsync();
-                    // Признак того, строка нового события это или нет
+                    // A new line flag
                     var newEventLine = IsNewEventLine(currentLine);
-                    // Если это не новая строка и обработка не требуется, то переходим к следующей
+                    // If it`s not a line of the new event and the processing doesn`t need, go to the next line
                     if (!newEventLine && skipLine) continue;
 
                     if (newEventLine)
                     {
-                        // Сначала, если есть что, отправляем в обработку
+                        // If it`s a line of the new event and current event is not null, send the current event data to the next block
                         if (currentEvent != default)
                         {
                             await currentEvent.targetBlock.SendAsync(string.Concat(fileDate, ":", eventText));
-                            // Очищаем переменную, хранящую текст события
+                            // Clear the current event text
                             eventText = "";
                         }
-                        // Узнаем, есть ли тип нового события в списке к обработке
+                        // If the event type from the current line doesn`t exists in the events list, skip the next lines to the next line of the new event
                         currentEvent = events.FirstOrDefault(c => currentLine.Contains($",{c.eventName},"));
-                        // Если нет, то пропускаем все следующие до нового события
+
                         if (currentEvent == default) skipLine = true;
                     }
 
-                    // Соединяем строки текущего события
                     eventText = string.Concat(eventText, string.Concat((eventText == string.Empty ? "" : "\n"), currentLine));
                 }
 
-                // Теперь надо обработать последнее событие, т.к. оно не попадает в основной цикл
+                // Now process the last event data, it`s not appears in the main loop
                 if (currentEvent != default) await currentEvent.targetBlock.SendAsync(string.Concat(fileDate, ":", eventText));
             }
         }
