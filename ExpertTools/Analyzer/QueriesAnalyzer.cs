@@ -100,23 +100,23 @@ namespace ExpertTools
         {
             try
             {
-                Logger.Log("Start the queries analyze");
+                //Logger.Log("Start the queries analyze");
 
-                Logger.Log("Check settings");
+                //Logger.Log("Check settings");
 
-                await _settings.Check();
+                //await _settings.Check();
 
-                Logger.Log("Create the database");
+                //Logger.Log("Create the database");
 
-                await SqlHelper.CreateDatabase(_settings);
+                //await SqlHelper.CreateDatabase(_settings);
 
-                Logger.Log("Clean the folders");
+                //Logger.Log("Clean the folders");
 
-                Common.CleanFolder(_settings.TlFolder);
-                Common.CleanFolder(_settings.SqlTraceFolder);
-                Common.CleanFolder(_settings.TempFolder);
+                //Common.CleanFolder(_settings.TlFolder);
+                //Common.CleanFolder(_settings.SqlTraceFolder);
+                //Common.CleanFolder(_settings.TempFolder);
 
-                Logger.Log("Start the data collection");
+                //Logger.Log("Start the data collection");
 
                 await _session.Create();
                 await _logcfg.Write();

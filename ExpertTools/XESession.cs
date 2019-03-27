@@ -315,13 +315,16 @@ namespace ExpertTools
                 {
                     value += "(";
 
+                    bool firstFilter = true;
+
                     foreach (var filter in Filters)
                     {
-                        value += $"{Environment.NewLine}{filter},";
-                    }
+                        var prefix = firstFilter ? $"{Environment.NewLine}\tWHERE" : " AND ";
 
-                    // Delete the last comma
-                    value = value.Substring(0, value.Length - 1);
+                        value += $"{prefix}{filter}";
+
+                        firstFilter = false;
+                    }
 
                     value += ")";
                 }
@@ -348,7 +351,9 @@ namespace ExpertTools
 
             public override string ToString()
             {
-                return $"\tWHERE([{Field}]{ComparisonType}N'{Value}')";
+                var value = int.TryParse(Value, out int t) ? $"({Value})" : $"N'{Value}'";
+
+                return $"([{Field}]{ComparisonType}{value})";
             }
         }
 
