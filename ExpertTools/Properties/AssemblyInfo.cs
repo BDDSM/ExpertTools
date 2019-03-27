@@ -10,7 +10,7 @@ using System.Windows;
 [assembly: AssemblyTitle("ExpertTools")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Акпаев Вегений Александрович")]
+[assembly: AssemblyCompany("Акпаев Евгений Александрович")]
 [assembly: AssemblyProduct("ExpertTools")]
 [assembly: AssemblyCopyright("Copyright © Акпаев Евгений Александрович")]
 [assembly: AssemblyTrademark("")]

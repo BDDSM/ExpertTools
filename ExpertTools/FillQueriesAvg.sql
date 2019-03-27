@@ -1,4 +1,6 @@
-﻿INSERT INTO ExpertTools.dbo.QueriesAnalyzeAvgSqlQueries
+﻿USE ExpertTools;
+
+INSERT INTO QueriesAnalyzeAvgSqlQueries
 SELECT
 	SUM(duration) / COUNT(_hash),
 	SUM(physical_reads) / COUNT(_hash),
@@ -6,6 +8,6 @@ SELECT
 	SUM(writes) / COUNT(_hash),
 	SUM(cpu_time) / COUNT(_hash),
 	_hash
-FROM ExpertTools.dbo.QueriesAnalyzeSqlQueries
+FROM QueriesAnalyzeSqlQueries
 GROUP BY
 	_hash

@@ -100,23 +100,23 @@ namespace ExpertTools
         {
             try
             {
-                //Logger.Log("Start the queries analyze");
+                Logger.Log("Start the queries analyze");
 
-                //Logger.Log("Check settings");
+                Logger.Log("Check settings");
 
-                //await _settings.Check();
+                await _settings.Check();
 
-                //Logger.Log("Create the database");
+                Logger.Log("Create the database");
 
-                //await SqlHelper.CreateDatabase(_settings);
+                await SqlHelper.CreateDatabase(_settings);
 
-                //Logger.Log("Clean the folders");
+                Logger.Log("Clean the folders");
 
-                //Common.CleanFolder(_settings.TlFolder);
-                //Common.CleanFolder(_settings.SqlTraceFolder);
-                //Common.CleanFolder(_settings.TempFolder);
+                Common.CleanFolder(_settings.TlFolder);
+                Common.CleanFolder(_settings.SqlTraceFolder);
+                Common.CleanFolder(_settings.TempFolder);
 
-                //Logger.Log("Start the data collection");
+                Logger.Log("Start the data collection");
 
                 await _session.Create();
                 await _logcfg.Write();
@@ -148,7 +148,12 @@ namespace ExpertTools
                 await SqlHelper.InsertFileIntoTable(_settings, CONTEXT_TABLENAME, CONTEXT_TEMP_FILEPATH);
                 await SqlHelper.InsertFileIntoTable(_settings, DBMSSQL_TABLENAME, DBMSSQL_TEMP_FILEPATH);
 
+                Logger.Log("Join contexts and queries");
+
                 await FillContext();
+
+                Logger.Log("Fill AVG table");
+
                 await FillQueriesAvgTable();
 
                 Logger.Log("Analyze was successfully completed");
@@ -385,6 +390,7 @@ namespace ExpertTools
             using (var connection = await SqlHelper.GetSqlConnection(_settings))
             {
                 var command = connection.CreateCommand();
+                command.CommandTimeout = 300;
 
                 command.CommandText = Properties.Resources.FillQueriesAvg;
 
@@ -397,6 +403,7 @@ namespace ExpertTools
             using (var connection = await SqlHelper.GetSqlConnection(_settings))
             {
                 var command = connection.CreateCommand();
+                command.CommandTimeout = 300;
 
                 command.CommandText = Properties.Resources.FillContext;
 
