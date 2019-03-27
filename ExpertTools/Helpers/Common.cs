@@ -6,48 +6,47 @@ using System.Security.Cryptography;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Linq;
-using System.Diagnostics;
 
-namespace ExpertTools.Helpers
+namespace ExpertTools
 {
     /// <summary>
-    /// Общие методы
+    /// Provides common methods and objects
     /// </summary>
-    public static class Common
+    public static partial class Common
     {
-        /// <summary>
-        /// Разделитель полей для файлов CSV
-        /// </summary>
-        public const string FS = "<SEPARATOR>";
+        #region Analyze_Types
 
         /// <summary>
-        /// Разделитель строк для файлов CSV
+        /// Collection data for analyze requests by cpu utilization, io and duration
         /// </summary>
-        public const string LS = "<LINE>";
+        public const string QA = "Анализ запросов";
+
+        #endregion
 
         /// <summary>
-        /// Хранилище таймеров
+        /// Field separator for CSV files
+        /// </summary>
+        public const string FS = "<F>";
+
+        /// <summary>
+        /// Row separator for CSV files
+        /// </summary>
+        public const string RS = "<R>";
+
+        /// <summary>
+        /// Timers storage
         /// </summary>
         private static Dictionary<string, DateTime> _beginnedTimers = new Dictionary<string, DateTime>();
 
-        /// <summary>
-        /// Возвращает MD5 хэш для переданной строки
-        /// </summary>
-        /// <param name="data">Данные для хэширования</param>
-        /// <returns>Хэш</returns>
-        public static async Task<string> GetMD5Hash(string data)
-        {
-            var md5 = MD5.Create();
-
-            var hashBytes = md5.ComputeHash(Encoding.Default.GetBytes(data));
-
-            return await Task.FromResult(BitConverter.ToString(hashBytes).Replace("-", string.Empty).ToLower());
-        }
+        //static Common()
+        //{
+        //    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        //}
 
         /// <summary>
-        /// Запускает замер времени
+        /// Starts a new timer
         /// </summary>
-        /// <param name="timerName">Наименование таймера</param>
+        /// <param name="timerName">Timer name</param>
         public static void StartTimer(string timerName)
         {
             if (_beginnedTimers.ContainsKey(timerName))
@@ -59,43 +58,104 @@ namespace ExpertTools.Helpers
         }
 
         /// <summary>
-        /// Заканчивает замер времени и возвращает время работы в секундах
+        /// Stops a timer and returs timespan between starting and ending
         /// </summary>
-        /// <param name="timerName">Наименование таймера</param>
-        /// <returns>Время работы таймера</returns>
-        public static double EndTimer(string timerName)
+        /// <param name="timerName">Timer name</param>
+        /// <returns>Timespan</returns>
+        public static TimeSpan EndTimer(string timerName)
         {
             if (!_beginnedTimers.ContainsKey(timerName))
             {
                 throw new Exception($"Таймер с именем {timerName} не запущен");
             }
 
-            var seconds = DateTime.Now.Subtract(_beginnedTimers[timerName]).TotalSeconds;
+            var timeSpan = DateTime.Now.Subtract(_beginnedTimers[timerName]);
 
             _beginnedTimers.Remove(timerName);
 
-            return seconds;
+            return timeSpan;
         }
 
         /// <summary>
-        /// Записывает строку в поток
+        /// Returns MD5 hash of the string
         /// </summary>
-        /// <param name="data">Данные для записи</param>
-        /// <param name="writer">Выходной поток для записи</param>
-        /// <returns></returns>
-        public static async Task WriteToOutputStream(string data, StreamWriter writer)
+        /// <param name="data">String for hash</param>
+        /// <returns>Text present of MD5 hash</returns>
+        public static async Task<string> GetMD5Hash(string data)
         {
-            if (data != string.Empty)
+            var md5 = MD5.Create();
+
+            var hashBytes = await Task.FromResult(md5.ComputeHash(Encoding.Default.GetBytes(data)));
+
+            var hashBytesString = await Task.FromResult(BitConverter.ToString(hashBytes).Replace("-", string.Empty).ToLower());
+
+            return hashBytesString;
+        }
+
+        /// <summary>
+        /// Replaces a [variable] format variable in the text
+        /// </summary>
+        /// <param name="text">Text</param>
+        /// <param name="variable">Variable name</param>
+        /// <param name="value">Variable value</param>
+        /// <returns></returns>
+        public static void SetVariableValue(ref string text, string variable, string value)
+        {
+            text = text.Replace($"[{variable}]", value);
+        }
+
+        /// <summary>
+        /// Check a write posibility in the folder
+        /// </summary>
+        /// <param name="path">Folder path</param>
+        /// <returns>true or false</returns>
+        public static void CheckFolderWriting(string path)
+        {
+            var tempFile = Path.Combine(path, Path.GetRandomFileName());
+
+            try
             {
-                await writer.WriteAsync("\n" + data);
+                var s = File.Create(tempFile);
+                s.Close();
+                s.Dispose();
+                File.Delete(tempFile);
+            }
+            catch
+            {
+                throw new Exception($"Folder \"{path}\" is not available for the writing");
+            }
+        }
+
+        public static void CheckFolderExisted(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                throw new Exception($"Folder \"{path}\" doesn`t exists");
             }
         }
 
         /// <summary>
-        /// Возвращает нормализованный текст запроса для дальнейшего соединения с трассировкой SQL
+        /// Deletes all files and directories in the folder
         /// </summary>
-        /// <param name="sql">Текст запроса, полученный методом GetSqlAsync</param>
-        /// <returns>Нормализованный текст запроса</returns>
+        /// <param name="folder">Cleaning folder</param>
+        public static void CleanFolder(string folder)
+        {
+            foreach (var f in Directory.GetFiles(folder))
+            {
+                File.Delete(f);
+            }
+
+            foreach (var dir in Directory.GetDirectories(folder))
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        /// <summary>
+        /// Returns a normalized request statement
+        /// </summary>
+        /// <param name="sql">Request statement</param>
+        /// <returns>Normalized request statement</returns>
         public static async Task<string> GetNormalizedSql(string sql)
         {
             var normalizedSql = sql;
@@ -122,117 +182,95 @@ namespace ExpertTools.Helpers
         }
 
         /// <summary>
-        /// Очищает каталоги логов и временных файлов
-        /// </summary>
-        public static void ClearFolders()
-        {
-            ClearFolder(Config.TechLogFolder);
-
-            ClearFolder(Config.SqlTraceFolder);
-
-            ClearFolder(Config.TempFolder);
-        }
-
-        /// <summary>
-        /// Полностью очищает переданный каталог
-        /// </summary>
-        /// <param name="folder">Каталог для очистки</param>
-        public static void ClearFolder(string folder)
-        {
-            foreach (var f in Directory.GetFiles(folder))
-            {
-                File.Delete(f);
-            }
-
-            foreach (var dir in Directory.GetDirectories(folder))
-            {
-                Directory.Delete(dir, true);
-            }
-        }
-
-        /// <summary>
-        /// Записывает данные в лог приложения
-        /// </summary>
-        /// <param name="text">Текст для записи</param>
-        /// <returns></returns>
-        public static async Task WriteLog(string text)
-        {
-            var path = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "log.txt");
-
-            using (var writer = new StreamWriter(path, true))
-            {
-                await writer.WriteLineAsync($"{DateTime.Now} : {text}, Memory={Environment.WorkingSet / 1000000}");
-            }
-        }
-
-        /// <summary>
-        /// Возвращает список баз, если возможно
+        /// Returns available types of an analyze
         /// </summary>
         /// <returns></returns>
-        public static async Task<List<DatabaseItem>> GetBases()
+        public static string[] GetAnalyzeTypes()
         {
-            var bases = new List<DatabaseItem>();
-
-            try
-            {
-                var rootDirectory = Directory.GetParent(Config.TechLogConfFolder);
-
-                var files = Directory.GetFiles(Path.Combine(rootDirectory.FullName, "srvinfo"), "1CV8Clst.lst", SearchOption.AllDirectories);
-
-                foreach (var file in files)
-                {
-                    using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    using (var reader = new StreamReader(stream))
-                    {
-                        try
-                        {
-                            while (!reader.EndOfStream)
-                            {
-                                var data = await reader.ReadLineAsync();
-
-                                if (data.Contains(",\"MSSQLServer\","))
-                                {
-                                    var lineData = data.Split(',');
-
-                                    var base1C = lineData[1].Trim(new char[] { '"' });
-                                    var baseSql = lineData[5].Trim(new char[] { '"' });
-
-                                    bases.Add(new DatabaseItem(base1C, baseSql));
-                                }
-                            }
-                        }
-                        catch { }
-                    }
-                }
-            }
-            catch { }
-
-            return bases;
+            return new string[] { QA };
         }
 
         /// <summary>
-        /// Возвращает поток для записи обработанных данных
+        /// Returns the stream for writing handled data
         /// </summary>
-        /// <param name="filePath">Путь к файлу в который открываается поток</param>
+        /// <param name="filePath">Path to the output file</param>
         /// <returns></returns>
         public static StreamWriter GetOutputStream(string filePath)
         {
-            var contextStream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
-            var contextWriter = new StreamWriter(contextStream, Encoding.GetEncoding(1251));
+            var encoding = Encoding.GetEncoding(1251);
+            var stream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
+            var writer = new StreamWriter(stream, encoding);
 
-            return contextWriter;
+            return writer;
         }
 
         /// <summary>
-        /// Заменяет в тексте переменную формата [variable] на указанное значение
+        /// Writes the string into the stream
         /// </summary>
-        /// <param name="text">Обрабатываемый текст</param>
-        /// <param name="variable">Название переменной</param>
-        /// <param name="value">Подсавляемое значение переменной</param>
+        /// <param name="data">Data for writing</param>
+        /// <param name="writer">Output stream</param>
         /// <returns></returns>
-        public static void SetVariableValue(ref string text, string variable, string value)
+        public static async Task WriteToOutputStream(string data, StreamWriter writer)
         {
-            text = text.Replace($"[{variable}]", value);
+            if (data != string.Empty)
+            {
+                await writer.WriteAsync(Environment.NewLine + data);
+            }
+        }
+
+        /// <summary>
+        /// Writes settings to the config file
+        /// </summary>
+        /// <typeparam name="T">Type of the analyze settings</typeparam>
+        /// <param name="analyzerSetting">Settings of the analyze</param>
+        /// <param name="path">A new path to the config file</param>
+        public static void WriteConfigFile<T>(T analyzerSetting, string path)
+        {
+            string content = "";
+
+            var properties = typeof(T).GetProperties().Where(c => c.IsDefined(typeof(Setting), false));
+
+            foreach (var property in properties)
+            {
+                content += content == string.Empty ? "" : Environment.NewLine;
+                content += $"{property.Name} = {property.GetValue(analyzerSetting)}";
+            }
+
+            File.WriteAllText(path, content);
+        }
+
+        /// <summary>
+        /// Reads the config file and returns a new instance of the analyze settings class
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static T ReadConfigFile<T>(string path) where T : new()
+        {
+            T settings = new T();
+
+            var configData = File.ReadAllLines(path);
+
+            foreach (var line in configData)
+            {
+                var lineData = line.Split('=');
+
+                if (lineData.Length == 2)
+                {
+                    var property = typeof(T).GetProperty(lineData[0].Trim());
+
+                    try
+                    {
+                        property.SetValue(settings, Convert.ChangeType(lineData[1].Trim(), property.PropertyType));
+                    }
+                    catch
+                    {
+                        throw new Exception("Config file is not a valid");
+                    }
+                }
+            }
+
+            return settings;
         }
     }
 }

@@ -1,1 +1,0 @@
-﻿SELECT event_data FROM sys.fn_xe_file_target_read_file('[SESSION_FILES_PATH]', null, null, null)

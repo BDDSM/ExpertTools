@@ -1,11 +1,12 @@
-﻿USE [DATABASE_NAME];
+﻿USE ExpertTools;
 
---Таблицы базы данных
+--Tables
 
 CREATE TABLE QueriesAnalyzeTlQueries
 (
 	id INT IDENTITY NOT NULL,
-	_Period datetime2 not null,
+	_start_Period DATETIME2 not null,
+	_Period DATETIME2 not null,
 	_user NVARCHAR(200) NOT NULL,
 	connectId NVARCHAR(20) NOT NULL,
 	clientId NVARCHAR(20) NOT NULL,
@@ -56,21 +57,18 @@ CREATE TABLE QueriesAnalyzeAvgSqlQueries
 	CONSTRAINT PK_QueriesAnalyzeAvgSqlQueries PRIMARY KEY(id)
 );
 
---Индексы таблиц базы данных
+--Indexes
 CREATE NONCLUSTERED INDEX by_hash 
 	ON QueriesAnalyzeTlQueries(_hash) 
 		INCLUDE(context_last_line, context_first_line, sql);
 
-CREATE NONCLUSTERED INDEX by_connectId_clientId_context_exists 
-	ON QueriesAnalyzeTlQueries(connectId, clientId, context_exists) 
-		INCLUDE(id, _Period);
+CREATE NONCLUSTERED INDEX for_join_context 
+	ON QueriesAnalyzeTlQueries(context_exists, connectId, clientId, _Period) 
+		INCLUDE(id);
 
-CREATE NONCLUSTERED INDEX by_connectId_clientId_period 
-	ON QueriesAnalyzeTlQueries(_Period, connectId, clientId);
-
-CREATE NONCLUSTERED INDEX by_connectId_clientId_period 
-	ON QueriesAnalyzeTlContexts(_Period, connectId, clientId) 
-		INCLUDE(context_first_line, context_last_line);
+CREATE NONCLUSTERED INDEX for_join_context
+	ON QueriesAnalyzeTlContexts(connectId, clientId, _Period)
+		INCLUDE(context_first_line, context_last_line, id);
 
 CREATE NONCLUSTERED INDEX by_hash 
 	ON QueriesAnalyzeSqlQueries(_hash)

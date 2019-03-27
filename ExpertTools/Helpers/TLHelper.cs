@@ -7,15 +7,15 @@ using System.Threading.Tasks.Dataflow;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace ExpertTools.Core
+namespace ExpertTools
 {
     /// <summary>
     /// Provides static methods for working with the technology log
     /// </summary>
-    public partial class TLHelper
+    public partial class TlHelper
     {
         /// <summary>
-        /// Returns a number to set the "history" attribute of the "log" element
+        /// Returns the number of hours to set the "history" attribute of the "log" element
         /// </summary>
         /// <param name="minutes">Minutes</param>
         /// <returns></returns>
@@ -42,9 +42,8 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Waits appearance of the first folder on the collection data folder
+        /// Waits appearance of the first folder in the collection data folder
         /// </summary>
-        /// <returns></returns>
         public static Task WaitStartCollectData(Logcfg logcfg)
         {
             var tcs = new TaskCompletionSource<bool>();
@@ -156,11 +155,11 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Clears a request statement from parameter values and stored procedure calls
+        /// Cleans the request statement from parameter values and operators of stored procedure calls
         /// </summary>
         /// <param name="data">Request statement</param>
         /// <returns></returns>
-        public static async Task<string> ClearSql(string data)
+        public static async Task<string> CleanSql(string data)
         {
             string sql = data;
 
@@ -193,7 +192,7 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Returns true if this line is a starting line of the event, else returns false
+        /// Returns "true" if this line is the starting line of the event, else returns "false"
         /// </summary>
         /// <param name="line">Text line</param>
         /// <returns>True or false</returns>
@@ -207,7 +206,7 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Returns a first line of the event context
+        /// Returns the first line of the event context
         /// </summary>
         /// <param name="context">Event context</param>
         /// <returns>First line of the event context</returns>
@@ -228,7 +227,7 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Returns a last line of the event context
+        /// Returns the last line of the event context
         /// </summary>
         /// <param name="context">Event context</param>
         /// <returns>Last line of the event context</returns>
@@ -249,7 +248,7 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Reads a file line by line, groups event lines and sends the result to the next block
+        /// Reads the file line by line, groups event lines and sends the result to the next block
         /// </summary>
         /// <param name="events">Events</param>
         /// <param name="filePath">Path to the log file</param>
@@ -266,7 +265,7 @@ namespace ExpertTools.Core
                 // Skip line flag
                 bool skipLine = false;
                 // Current event
-                (string eventName, ITargetBlock<string> targetBlock) currentEvent = default;
+                (string eventName, ITargetBlock<string> targetBlock)? currentEvent = null;
 
                 while (!reader.EndOfStream)
                 {
@@ -279,23 +278,23 @@ namespace ExpertTools.Core
                     if (newEventLine)
                     {
                         // If it`s a line of the new event and current event is not null, send the current event data to the next block
-                        if (currentEvent != default)
+                        if (currentEvent != null)
                         {
-                            await currentEvent.targetBlock.SendAsync(string.Concat(fileDate, ":", eventText));
+                            await currentEvent.Value.targetBlock.SendAsync(string.Concat(fileDate, ":", eventText));
                             // Clear the current event text
                             eventText = "";
                         }
                         // If the event type from the current line doesn`t exists in the events list, skip the next lines to the next line of the new event
                         currentEvent = events.FirstOrDefault(c => currentLine.Contains($",{c.eventName},"));
 
-                        if (currentEvent == default) skipLine = true;
+                        if (currentEvent == null) skipLine = true;
                     }
 
                     eventText = string.Concat(eventText, string.Concat((eventText == string.Empty ? "" : "\n"), currentLine));
                 }
 
                 // Now process the last event data, it`s not appears in the main loop
-                if (currentEvent != default) await currentEvent.targetBlock.SendAsync(string.Concat(fileDate, ":", eventText));
+                if (currentEvent != null) await currentEvent.Value.targetBlock.SendAsync(string.Concat(fileDate, ":", eventText));
             }
         }
 

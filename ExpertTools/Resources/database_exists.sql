@@ -1,1 +1,0 @@
-﻿SELECT * FROM sys.databases WHERE name = '[DATABASE_NAME]';

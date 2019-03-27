@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ExpertTools.Model
+namespace ExpertTools
 {
-    public enum AnalyzeType
+    public interface IAnalyzerSettings
     {
-        None,
-        QueriesAnalyze
+        string Name { get; }
+
+        Task Check();
     }
 }

@@ -118,43 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="bulk_insert" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\bulk_insert.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="create_database" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\create_database.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="create_database_structure" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\create_database_structure.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="database_exists" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\database_exists.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="TlQueriesAnalyze" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\TL\TlQueriesAnalyze.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="TlQueriesAnalyzeDbFilter" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\TL\TlQueriesAnalyzeDbFilter.xml;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="XeQueriesAnalyze" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\XE\XeQueriesAnalyze.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="XeQueriesAnalyzeDbFilter" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\XE\XeQueriesAnalyzeDbFilter.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="delete_session" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\XE\delete_session.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="get_session_events" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\XE\get_session_events.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="start_session" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\XE\start_session.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="stop_session" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\XE\stop_session.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="group_queries_avg" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\XE\group_queries_avg.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  <data name="CreateDatabase" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\CreateDatabase.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
 </root>

@@ -6,7 +6,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace ExpertTools.Core
+namespace ExpertTools
 {
     /// <summary>
     /// Represents an configuration file of the 1C:Enterprise technology log
@@ -16,7 +16,8 @@ namespace ExpertTools.Core
         /// <summary>
         /// Namespace of the configuration file
         /// </summary>
-        XNamespace ns = "http://v8.1c.ru/v8/tech-log";
+        XNamespace _ns = "http://v8.1c.ru/v8/tech-log";
+        string _techLogConfFolder;
 
         #region Comparison_Types
 
@@ -110,24 +111,19 @@ namespace ExpertTools.Core
         #endregion
 
         /// <summary>
-        /// Path to the "conf" folder of 1C:Enterprise application
-        /// </summary>
-        public string ConfFolder { get; private set; } = "";
-
-        /// <summary>
         /// Path of the config file
         /// </summary>
-        public string FilePath => Path.Combine(ConfFolder, "logcfg.xml");
+        public string FilePath => Path.Combine(_techLogConfFolder, "logcfg.xml");
 
         /// <summary>
         /// Initialize a new instance of LogCfg class
         /// </summary>
-        /// <param name="confFolder">Path to the "conf" folder of 1C:Enterprise application</param>
-        public Logcfg(string confFolder)
+        /// <param name="analyzerSettings">Analyzer settings</param>
+        public Logcfg(ITlAnalyzerSettings analyzerSettings)
         {
-            ConfFolder = confFolder;
+            _techLogConfFolder = analyzerSettings.TlConfFolder;
 
-            Add(new XElement(ns + "config"));
+            Add(new XElement(_ns + "config"));
         }
 
         /// <summary>
@@ -137,7 +133,7 @@ namespace ExpertTools.Core
         /// <param name="location">Path to the folder of collection data</param>
         public XElement AddLog(string history, string location)
         {
-            var elem = new XElement(ns + "log");
+            var elem = new XElement(_ns + "log");
 
             elem.Add(new XAttribute("history", history));
             elem.Add(new XAttribute("location", location));
@@ -154,9 +150,9 @@ namespace ExpertTools.Core
         /// <param name="eventName">Event name</param>
         public XElement AddEvent(XElement logElem, string eventName)
         {
-            var eventElem = new XElement(ns + "event");
+            var eventElem = new XElement(_ns + "event");
 
-            var eqEventElem = new XElement(ns + EQ_CT);
+            var eqEventElem = new XElement(_ns + EQ_CT);
 
             eventElem.Add(new XAttribute("property", NAME_PR));
             eventElem.Add(new XAttribute("value", eventName));
@@ -174,16 +170,16 @@ namespace ExpertTools.Core
         /// <param name="eventName">Event name</param>
         public XElement AddEvent(string eventName)
         {
-            var eventElem = new XElement(ns + "event");
+            var eventElem = new XElement(_ns + "event");
 
-            var eqEventElem = new XElement(ns + EQ_CT);
+            var eqEventElem = new XElement(_ns + EQ_CT);
 
             eqEventElem.Add(new XAttribute("property", NAME_PR));
             eqEventElem.Add(new XAttribute("value", eventName));
 
             eventElem.Add(eqEventElem);
 
-            Descendants(ns + "log").ToList().ForEach(c => c.Add(eventElem));
+            Descendants(_ns + "log").ToList().ForEach(c => c.Add(eventElem));
 
             return eventElem;
         }
@@ -197,7 +193,7 @@ namespace ExpertTools.Core
         /// <param name="value">Filter value</param>
         public XElement AddFilter(XElement eventElem, string comparisonType, string property, string value)
         {
-            var filterElem = new XElement(ns + comparisonType);
+            var filterElem = new XElement(_ns + comparisonType);
 
             filterElem.Add(new XAttribute("property", property));
             filterElem.Add(new XAttribute("value", value));
@@ -208,31 +204,31 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Add a new filter element into all "event" elements
+        /// Adds a new filter element into all "event" elements
         /// </summary>
         /// <param name="comparisonType">Comparison type</param>
         /// <param name="property">Filtered property name</param>
         /// <param name="value">Filter value</param>
         public XElement AddFilter(string comparisonType, string property, string value)
         {
-            var filterElem = new XElement(ns + comparisonType);
+            var filterElem = new XElement(_ns + comparisonType);
 
             filterElem.Add(new XAttribute("property", property));
             filterElem.Add(new XAttribute("value", value));
 
-            Descendants(ns + "event").ToList().ForEach(c => c.Add(filterElem));
+            Descendants(_ns + "event").ToList().ForEach(c => c.Add(filterElem));
 
             return filterElem;
         }
 
         /// <summary>
-        /// Add a new "property" element
+        /// Adds a new "property" element
         /// </summary>
         /// <param name="logElem">Parent "log" element</param>
         /// <param name="property">Property name</param>
         public void AddProperty(XElement logElem, string property)
         {
-            var propertyElem = new XElement(ns + "property");
+            var propertyElem = new XElement(_ns + "property");
 
             propertyElem.Add(new XAttribute("name", property));
 
@@ -240,16 +236,16 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Add a new "property" element into all "log" elements
+        /// Adds a new "property" element into all "log" elements
         /// </summary>
         /// <param name="property">Property name</param>
         public void AddProperty(string property)
         {
-            var propertyElem = new XElement(ns + "property");
+            var propertyElem = new XElement(_ns + "property");
 
             propertyElem.Add(new XAttribute("name", property));
 
-            Descendants(ns + "log").ToList().ForEach(c => c.Add(propertyElem));
+            Descendants(_ns + "log").ToList().ForEach(c => c.Add(propertyElem));
         }
 
         /// <summary>
@@ -260,7 +256,7 @@ namespace ExpertTools.Core
         {
             List<string> paths = new List<string>();
 
-            Descendants(ns + "log").ToList().ForEach(c => paths.Add(c.Attribute("location").Value));
+            Descendants(_ns + "log").ToList().ForEach(c => paths.Add(c.Attribute("location").Value));
 
             return paths.Distinct().ToArray();
         }
@@ -278,7 +274,7 @@ namespace ExpertTools.Core
         }
 
         /// <summary>
-        /// Delete the configuration file
+        /// Deletes the configuration file
         /// </summary>
         public void Delete()
         {
