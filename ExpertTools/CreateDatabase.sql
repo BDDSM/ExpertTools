@@ -5,7 +5,6 @@
 CREATE TABLE QueriesAnalyzeTlQueries
 (
 	id INT IDENTITY NOT NULL,
-	_start_Period DATETIME2 not null,
 	_Period DATETIME2 not null,
 	_user NVARCHAR(200) NOT NULL,
 	connectId NVARCHAR(20) NOT NULL,

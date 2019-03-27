@@ -222,9 +222,9 @@ namespace ExpertTools
         /// Writes settings to the config file
         /// </summary>
         /// <typeparam name="T">Type of the analyze settings</typeparam>
-        /// <param name="analyzerSetting">Settings of the analyze</param>
+        /// <param name="settings">Settings of the analyze</param>
         /// <param name="path">A new path to the config file</param>
-        public static void WriteConfigFile<T>(T analyzerSetting, string path)
+        public static void WriteConfigFile<T>(T settings, string path)
         {
             string content = "";
 
@@ -233,7 +233,7 @@ namespace ExpertTools
             foreach (var property in properties)
             {
                 content += content == string.Empty ? "" : Environment.NewLine;
-                content += $"{property.Name} = {property.GetValue(analyzerSetting)}";
+                content += $"{property.Name} = {property.GetValue(settings)}";
             }
 
             File.WriteAllText(path, content);
@@ -271,6 +271,67 @@ namespace ExpertTools
             }
 
             return settings;
+        }
+
+        /// <summary>
+        /// Reads the config file and returns a new instance of the analyze settings class
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static void ReadConfigFile<T>(T settings, string path) where T : new()
+        {
+            var configData = File.ReadAllLines(path);
+
+            foreach (var line in configData)
+            {
+                var lineData = line.Split('=');
+
+                if (lineData.Length == 2)
+                {
+                    var property = typeof(T).GetProperty(lineData[0].Trim());
+
+                    try
+                    {
+                        property.SetValue(settings, Convert.ChangeType(lineData[1].Trim(), property.PropertyType));
+                    }
+                    catch
+                    {
+                        throw new Exception("Config file is not a valid");
+                    }
+                }
+            }
+        }
+
+        public static TAnalyzerSettings GetAnalyzerSettings<TViewVModel, TAnalyzerSettings>(TViewVModel viewModel) where TAnalyzerSettings: new ()
+        {
+            try
+            {
+                TAnalyzerSettings settings = new TAnalyzerSettings();
+
+                var setProperties = typeof(TAnalyzerSettings).GetProperties().Where(c => c.IsDefined(typeof(Setting), false));
+                var vmProperties = typeof(TAnalyzerSettings).GetProperties();
+
+                foreach (var setProperty in setProperties)
+                {
+                    var vmProperty = typeof(TViewVModel).GetProperty(setProperty.Name);
+
+                    var value = vmProperty.GetValue(viewModel);
+
+                    if (value != null)
+                    {
+                        setProperty.SetValue(settings, Convert.ChangeType(value, setProperty.PropertyType));
+                    }
+                }
+
+                return settings;
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(ex);
+
+                throw new Exception();
+            }
         }
     }
 }

@@ -1,0 +1,31 @@
+﻿<m:MetroWindow x:Class="ExpertTools.View.MainView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:m="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:conv="http://metro.mahapps.com/winfx/xaml/shared"
+        xmlns:local="clr-namespace:ExpertTools.View"
+        mc:Ignorable="d"
+        Title="Expert Tools" WindowStartupLocation="CenterScreen"
+        GlowBrush="{StaticResource AccentColorBrush}"
+        DataContext="{Binding Source={StaticResource Locator}, Path=Main}" SizeToContent="Height" Width="800">
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <DockPanel LastChildFill="False" ScrollViewer.CanContentScroll="True">
+            <m:MetroAnimatedTabControl DockPanel.Dock="Top" IsEnabled="{Binding Started, Converter={StaticResource InverseBoolConverter}}">
+                <m:MetroTabItem Header="Queries analyze" m:ControlsHelper.HeaderFontSize="20">
+                    <local:QueriesAnalyze></local:QueriesAnalyze>
+                </m:MetroTabItem>
+            </m:MetroAnimatedTabControl>
+            <StackPanel DockPanel.Dock="Bottom" 
+                    Orientation="Vertical" 
+                    HorizontalAlignment="Center" 
+                    Margin="10" 
+                    MinWidth="200">
+                <Label Content="{Binding State}" HorizontalAlignment="Center"></Label>
+                <Label Content="{Binding Timer}" HorizontalAlignment="Center" Margin="0,10,0,0"></Label>
+                <m:MetroProgressBar IsIndeterminate="True" Visibility="{Binding Started, Converter={StaticResource BoolVisHidConv}}"></m:MetroProgressBar>
+            </StackPanel>
+        </DockPanel>
+    </ScrollViewer>
+</m:MetroWindow>

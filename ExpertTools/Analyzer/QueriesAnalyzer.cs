@@ -100,7 +100,7 @@ namespace ExpertTools
         {
             try
             {
-                Logger.Info("Start the queries analyze");
+                Logger.Log("Start the queries analyze");
 
                 Logger.Log("Check settings");
 
@@ -148,12 +148,16 @@ namespace ExpertTools
                 await SqlHelper.InsertFileIntoTable(_settings, CONTEXT_TABLENAME, CONTEXT_TEMP_FILEPATH);
                 await SqlHelper.InsertFileIntoTable(_settings, DBMSSQL_TABLENAME, DBMSSQL_TEMP_FILEPATH);
 
-                Logger.Info("Analyze was successfully completed");
+                await FillContext();
+                await FillQueriesAvgTable();
+
+                Logger.Log("Analyze was successfully completed");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex);
-                Logger.Error("Analyze was completed with errors");
+                Logger.Log(ex);
+                Logger.Log("Analyze was completed with errors");
+                throw new Exception();
             }
         }
 
@@ -374,6 +378,30 @@ namespace ExpertTools
                 Common.FS +
                 hash +
                 Common.RS);
+        }
+
+        private async Task FillQueriesAvgTable()
+        {
+            using (var connection = await SqlHelper.GetSqlConnection(_settings))
+            {
+                var command = connection.CreateCommand();
+
+                command.CommandText = Properties.Resources.FillQueriesAvg;
+
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        private async Task FillContext()
+        {
+            using (var connection = await SqlHelper.GetSqlConnection(_settings))
+            {
+                var command = connection.CreateCommand();
+
+                command.CommandText = Properties.Resources.FillContext;
+
+                await command.ExecuteNonQueryAsync();
+            }
         }
     }
 }

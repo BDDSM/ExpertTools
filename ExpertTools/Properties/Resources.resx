@@ -121,4 +121,10 @@
   <data name="CreateDatabase" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\CreateDatabase.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
+  <data name="FillContext" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\FillContext.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="FillQueriesAvg" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\FillQueriesAvg.sql;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
 </root>

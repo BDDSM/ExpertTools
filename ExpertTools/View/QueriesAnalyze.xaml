@@ -1,0 +1,108 @@
+﻿<UserControl x:Class="ExpertTools.View.QueriesAnalyze"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:m="http://metro.mahapps.com/winfx/xaml/controls"
+             xmlns:local="clr-namespace:ExpertTools.View"
+             xmlns:ip="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             mc:Ignorable="d" 
+             d:DesignWidth="800"
+             DataContext="{Binding Source={StaticResource Locator}, Path=QueriesAnalyze}">
+    <StackPanel Orientation="Vertical" Margin="10">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,5,0,0">
+            <Button HorizontalAlignment="Center" Width="100" Style="{DynamicResource AccentedSquareButtonStyle}" Command="{Binding StartCmd}">
+                <Button.Content>
+                    <ip:Material Kind="Play"></ip:Material>
+                </Button.Content>
+            </Button>
+            <Button HorizontalAlignment="Center" ToolTip="Load settings" Margin="5,0,0,0" Width="30" Style="{DynamicResource SquareButtonStyle}" Command="{Binding LoadSettingsCmd}">
+                <Button.Content>
+                    <ip:Material Kind="Download"></ip:Material>
+                </Button.Content>
+            </Button>
+            <Button HorizontalAlignment="Center" ToolTip="Save settings" Margin="5,0,0,0" Width="30" Style="{DynamicResource SquareButtonStyle}" Command="{Binding SaveSettingsCmd}">
+                <Button.Content>
+                    <ip:Material Kind="Upload"></ip:Material>
+                </Button.Content>
+            </Button>
+        </StackPanel>
+        <Label Content="Common" Foreground="{StaticResource AccentColorBrush}"></Label>
+        <StackPanel Orientation="Vertical">
+            <TextBox m:TextBoxHelper.UseFloatingWatermark="True" 
+                 m:TextBoxHelper.Watermark="Temp folder" 
+                 Style="{DynamicResource ButtonCommandMetroTextBox}"
+                 m:TextBoxHelper.ButtonCommand="{Binding SelectTempFolderCmd}"
+                 Text="{Binding TempFolder}"
+                 Margin="0,5,0,0">
+                <m:TextBoxHelper.ButtonContent>
+                    <ip:Material Kind="FolderOpen"></ip:Material>
+                </m:TextBoxHelper.ButtonContent>
+            </TextBox>
+            <TextBox m:TextBoxHelper.UseFloatingWatermark="True" Margin="0,5,0,0" m:TextBoxHelper.Watermark="Number of minutes of data collection" Text="{Binding CollectPeriod}"></TextBox>
+        </StackPanel>
+        <Label Content="SQL" Foreground="{StaticResource AccentColorBrush}" Margin="0,5,0,0"></Label>
+        <StackPanel Orientation="Vertical">
+            <TextBox m:TextBoxHelper.UseFloatingWatermark="True" m:TextBoxHelper.Watermark="SQL Server" Text="{Binding SqlServer}"></TextBox>
+            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                <CheckBox IsChecked="{Binding IntegratedSecurity}"></CheckBox>
+                <Label Content="Use intagrated security"></Label>
+            </StackPanel>
+            <TextBox Text="{Binding SqlUser}" m:TextBoxHelper.UseFloatingWatermark="True" m:TextBoxHelper.Watermark="User" Visibility="{Binding IntegratedSecurity, Converter={StaticResource InvBoolVisColConv}}" Margin="0,5,0,0"></TextBox>
+            <PasswordBox PasswordChar="{Binding SqlUserPassword}" m:TextBoxHelper.UseFloatingWatermark="True" m:TextBoxHelper.Watermark="Password" Visibility="{Binding IntegratedSecurity, Converter={StaticResource InvBoolVisColConv}}" Margin="0,5,0,0"></PasswordBox>
+            <TextBox m:TextBoxHelper.UseFloatingWatermark="True" 
+                 m:TextBoxHelper.Watermark="Sql trace folder" 
+                 Style="{DynamicResource ButtonCommandMetroTextBox}"
+                 m:TextBoxHelper.ButtonCommand="{Binding SelectSqlTraceFolderCmd}"
+                 Text="{Binding SqlTraceFolder}"
+                 Margin="0,5,0,0">
+                <m:TextBoxHelper.ButtonContent>
+                    <ip:Material Kind="FolderOpen"></ip:Material>
+                </m:TextBoxHelper.ButtonContent>
+            </TextBox>
+        </StackPanel>
+        <Label Content="Technology log" Foreground="{StaticResource AccentColorBrush}" Margin="0,5,0,0"></Label>
+        <StackPanel Orientation="Vertical">
+            <TextBox m:TextBoxHelper.UseFloatingWatermark="True" 
+                 m:TextBoxHelper.Watermark="1C:Enterprise 'conf' folder" 
+                 Style="{DynamicResource ButtonCommandMetroTextBox}"
+                 m:TextBoxHelper.ButtonCommand="{Binding SelectTlConfFolderCmd}"
+                 Text="{Binding TlConfFolder}"
+                 Margin="0,5,0,0">
+                <m:TextBoxHelper.ButtonContent>
+                    <ip:Material Kind="FolderOpen"></ip:Material>
+                </m:TextBoxHelper.ButtonContent>
+            </TextBox>
+            <TextBox m:TextBoxHelper.UseFloatingWatermark="True" 
+                 m:TextBoxHelper.Watermark="Technology log folder" 
+                 Style="{DynamicResource ButtonCommandMetroTextBox}"
+                 m:TextBoxHelper.ButtonCommand="{Binding SelectTlFolderCmd}"
+                 Text="{Binding TlFolder}"
+                 Margin="0,5,0,0">
+                <m:TextBoxHelper.ButtonContent>
+                    <ip:Material Kind="FolderOpen"></ip:Material>
+                </m:TextBoxHelper.ButtonContent>
+            </TextBox>
+        </StackPanel>
+        <Label Content="Filter" Foreground="{StaticResource AccentColorBrush}" Margin="0,5,0,0"></Label>
+        <StackPanel Orientation="Vertical">
+            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                <CheckBox IsChecked="{Binding FilterByDatabase}"></CheckBox>
+                <Label Content="Database"></Label>
+            </StackPanel>
+            <StackPanel Orientation="Vertical" Margin="0,5,0,0" Visibility="{Binding FilterByDatabase, Converter={StaticResource BoolVisHidConv}}">
+                <TextBox m:TextBoxHelper.UseFloatingWatermark="True" m:TextBoxHelper.Watermark="1C:Enterprise base" Text="{Binding Database1C}"></TextBox>
+                <TextBox m:TextBoxHelper.UseFloatingWatermark="True" Margin="0,5,0,0" m:TextBoxHelper.Watermark="SQL database" Text="{Binding DatabaseSQL}"></TextBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                <CheckBox IsChecked="{Binding FilterByDuration}"></CheckBox>
+                <Label Content="Duration"></Label>
+            </StackPanel>
+            <TextBox m:TextBoxHelper.UseFloatingWatermark="True" 
+                         Margin="0,5,0,0" 
+                         m:TextBoxHelper.Watermark="Duration" 
+                         Text="{Binding Duration}"
+                         Visibility="{Binding FilterByDuration, Converter={StaticResource BoolVisHidConv}}"></TextBox>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

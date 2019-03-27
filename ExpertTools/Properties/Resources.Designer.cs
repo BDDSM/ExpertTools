@@ -19,7 +19,7 @@ namespace ExpertTools.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -68,7 +68,7 @@ namespace ExpertTools.Properties {
         ///CREATE TABLE QueriesAnalyzeTlQueries
         ///(
         ///	id INT IDENTITY NOT NULL,
-        ///	_Period datetime2 not null,
+        ///	_Period DATETIME2 not null,
         ///	_user NVARCHAR(200) NOT NULL,
         ///	connectId NVARCHAR(20) NOT NULL,
         ///	clientId NVARCHAR(20) NOT NULL,
@@ -86,6 +86,52 @@ namespace ExpertTools.Properties {
         internal static string CreateDatabase {
             get {
                 return ResourceManager.GetString("CreateDatabase", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SELECT
+        ///	T1.id,
+        ///	MIN(T2._Period) AS context_period
+        ///INTO #j1
+        ///FROM QueriesAnalyzeTlQueries AS T1
+        ///	INNER JOIN QueriesAnalyzeTlContexts AS T2
+        ///		ON T1._Period &lt; T2._Period
+        ///		AND T1.clientId = T2.clientId
+        ///		AND T1.connectId = T2.connectId
+        ///WHERE
+        ///	T1.context_exists = 0
+        ///GROUP BY
+        ///	T1.id;
+        ///
+        ///UPDATE QueriesAnalyzeTlQueries
+        ///SET
+        ///	QueriesAnalyzeTlQueries.context_first_line = T1.context_first_line,
+        ///	QueriesAnalyzeTlQueries.context_last_line = T1.context_last_line,
+        ///	QueriesAnalyzeTlQueries.context_exists = 1        /// [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string FillContext {
+            get {
+                return ResourceManager.GetString("FillContext", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to INSERT INTO QueriesAnalyzeAvgSqlQueries
+        ///SELECT
+        ///	SUM(duration) / COUNT(_hash),
+        ///	SUM(physical_reads) / COUNT(_hash),
+        ///	SUM(logical_reads) / COUNT(_hash),
+        ///	SUM(writes) / COUNT(_hash),
+        ///	SUM(cpu_time) / COUNT(_hash),
+        ///	_hash
+        ///FROM QueriesAnalyzeSqlQueries
+        ///GROUP BY
+        ///	_hash.
+        /// </summary>
+        internal static string FillQueriesAvg {
+            get {
+                return ResourceManager.GetString("FillQueriesAvg", resourceCulture);
             }
         }
     }
