@@ -76,8 +76,9 @@ namespace ExpertTools
         {
             _session = new XESession(_settings);
 
-            _session.AddEvent(XESession.RPC_COMPLETED_EV);
-            _session.AddEvent(XESession.SQL_BATCH_COMPLETED_EV);
+            _session.AddEvent(XESession.SQL_STATEMENT_COMPLETED_EV);
+            _session.AddEvent(XESession.SP_STATEMENT_COMPLETED_EV);
+            _session.AddAction(XESession.PLAN_HANDLE_F);
 
             if (_settings.FilterByDatabase)
             {
@@ -355,15 +356,16 @@ namespace ExpertTools
         {
             var doc = XDocument.Parse(text);
 
-            var sql = doc.Element("event").Attribute("name").Value == "rpc_completed" ? SqlHelper.GetDataValue(doc, "statement") : SqlHelper.GetDataValue(doc, "batch_text");
-            var clearedSql = await SqlHelper.CleanSql(sql);
-            var normalizedSql = await Common.GetNormalizedSql(clearedSql);
+            var sql = SqlHelper.GetDataValue(doc, "statement");
+            //var clearedSql = await SqlHelper.CleanSql(sql);
+            var normalizedSql = await Common.GetNormalizedSql(sql);
             var duration = SqlHelper.GetDataValue(doc, "duration");
             var physical_reads = SqlHelper.GetDataValue(doc, "physical_reads");
             var logical_reads = SqlHelper.GetDataValue(doc, "logical_reads");
             var writes = SqlHelper.GetDataValue(doc, "writes");
             var cpu_time = SqlHelper.GetDataValue(doc, "cpu_time");
             var hash = await Common.GetMD5Hash(normalizedSql);
+            var planHandle = SqlHelper.GetActionValue(doc, "plan_handle");
 
             await targetBlock.SendAsync(
                 Common.FS +
@@ -380,6 +382,8 @@ namespace ExpertTools
                 writes +
                 Common.FS +
                 cpu_time +
+                Common.FS +
+                planHandle +
                 Common.FS +
                 hash +
                 Common.RS);

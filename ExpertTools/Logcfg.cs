@@ -78,7 +78,7 @@ namespace ExpertTools
         /// <summary>
         /// Duration of an event
         /// </summary>
-        public const string DURATION_PR = "duration";
+        public const string DURATION_PR = "durationus";
         /// <summary>
         /// Client ID property
         /// </summary>

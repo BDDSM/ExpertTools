@@ -54,6 +54,14 @@ namespace ExpertTools
         /// "sqlserver.sql_batch_completed" event
         /// </summary>
         public const string SQL_BATCH_COMPLETED_EV = "sqlserver.sql_batch_completed";
+        /// <summary>
+        /// "sqlserver.sql_statement_completed" event
+        /// </summary>
+        public const string SQL_STATEMENT_COMPLETED_EV = "sqlserver.sql_statement_completed";
+        /// <summary>
+        /// "sqlserver.sp_statement_completed" event
+        /// </summary>
+        public const string SP_STATEMENT_COMPLETED_EV = "sqlserver.sp_statement_completed";
 
         #endregion
 
@@ -67,6 +75,10 @@ namespace ExpertTools
         /// Field of the database id
         /// </summary>
         public const string DATABASE_ID_F = "sqlserver.database_id";
+        /// <summary>
+        /// Field of the plan handle
+        /// </summary>
+        public const string PLAN_HANDLE_F = "sqlserver.plan_handle";
         /// <summary>
         /// Field of the duration
         /// </summary>
@@ -146,6 +158,29 @@ namespace ExpertTools
             var newElem = new Filter(field, comparisonType, value);
 
             Events.ForEach(c => c.Filters.Add(newElem));
+        }
+
+        /// <summary>
+        /// Adds a new "ACTION" element to the "EVENT" element
+        /// </summary>
+        /// <param name="ev">"EVENT" element</param>
+        /// <param name="field">Field name</param>
+        public void AddAction(Event ev, string field)
+        {
+            var newElem = new Action(field);
+
+            ev.Actions.Add(newElem);
+        }
+
+        /// <summary>
+        /// Adds a new "ACTION" element to all "EVENT" elements
+        /// </summary>
+        /// <param name="field">Field name</param>
+        public void AddAction(string field)
+        {
+            var newElem = new Action(field);
+
+            Events.ForEach(c => c.Actions.Add(newElem));
         }
 
         /// <summary>
@@ -302,6 +337,8 @@ namespace ExpertTools
 
             public List<Filter> Filters { get; private set; } = new List<Filter>();
 
+            public List<Action> Actions { get; private set; } = new List<Action>();
+
             public Event(string name)
             {
                 Name = name;
@@ -311,10 +348,28 @@ namespace ExpertTools
             {
                 string value = $"ADD EVENT {Name}";
 
+                value += "(";
+
+                if (Actions.Count != 0)
+                {
+                    value += "\n\tACTION(";
+
+                    bool firstAction = true;
+
+                    foreach (var action in Actions)
+                    {
+                        var prefix = firstAction ? "" : ",";
+
+                        value += $"{prefix}{action}";
+
+                        firstAction = false;
+                    }
+
+                    value += ")";
+                }
+
                 if (Filters.Count != 0)
                 {
-                    value += "(";
-
                     bool firstFilter = true;
 
                     foreach (var filter in Filters)
@@ -325,9 +380,9 @@ namespace ExpertTools
 
                         firstFilter = false;
                     }
-
-                    value += ")";
                 }
+
+                value += ")";
 
                 return value;
             }
@@ -354,6 +409,24 @@ namespace ExpertTools
                 var value = int.TryParse(Value, out int t) ? $"({Value})" : $"N'{Value}'";
 
                 return $"([{Field}]{ComparisonType}{value})";
+            }
+        }
+
+        /// <summary>
+        /// Represents an "ACTION" element of the "EVENT" extended events session element
+        /// </summary>
+        public class Action
+        {
+            public string Field { get; private set; }
+
+            public Action(string field)
+            {
+                Field = field;
+            }
+
+            public override string ToString()
+            {
+                return Field;
             }
         }
 

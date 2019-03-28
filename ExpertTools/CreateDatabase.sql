@@ -40,6 +40,7 @@ CREATE TABLE QueriesAnalyzeSqlQueries
 	logical_reads BIGINT NOT NULL,
 	writes BIGINT NOT NULL,
 	cpu_time BIGINT NOT NULL,
+	plan_handle VARBINARY(64) NOT NULL,
 	_hash NVARCHAR(32) NOT NULL,
 	CONSTRAINT PK_QueriesAnalyzeSqlQueries PRIMARY KEY(id)
 );
