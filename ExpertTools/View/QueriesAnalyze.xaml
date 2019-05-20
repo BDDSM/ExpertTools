@@ -46,7 +46,7 @@
             <TextBox m:TextBoxHelper.UseFloatingWatermark="True" m:TextBoxHelper.Watermark="SQL Server" Text="{Binding SqlServer}"></TextBox>
             <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                 <CheckBox IsChecked="{Binding IntegratedSecurity}"></CheckBox>
-                <Label Content="Use intagrated security"></Label>
+                <Label Content="Use integrated security"></Label>
             </StackPanel>
             <TextBox Text="{Binding SqlUser}" m:TextBoxHelper.UseFloatingWatermark="True" m:TextBoxHelper.Watermark="User" Visibility="{Binding IntegratedSecurity, Converter={StaticResource InvBoolVisColConv}}" Margin="0,5,0,0"></TextBox>
             <PasswordBox PasswordChar="{Binding SqlUserPassword}" m:TextBoxHelper.UseFloatingWatermark="True" m:TextBoxHelper.Watermark="Password" Visibility="{Binding IntegratedSecurity, Converter={StaticResource InvBoolVisColConv}}" Margin="0,5,0,0"></PasswordBox>
